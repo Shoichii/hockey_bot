@@ -1,5 +1,8 @@
 import os
-ADM_ID = os.environ.get('ADM_ID')
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+
+ADM_ID = int(os.environ.get('ADM_ID'))
 DAYS = (
         ('monday', 'Понедельник'),
         ('tuesday', 'Вторник'),

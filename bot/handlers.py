@@ -27,6 +27,10 @@ async def main_menu_message(msg):
 #приветстви только новых пользователей бота
 @dp.message_handler(commands=['start'])
 async def start(msg: types.Message):
+    print(msg.from_user.id)
+    print(type(msg.from_user.id))
+    print(ADM_ID)
+    print(type(ADM_ID))
     if msg.from_user.id == ADM_ID:
         button_1 = types.KeyboardButton('Уже записались 🏒')
         button_2 = types.KeyboardButton('Оценки тренировок 📊')
