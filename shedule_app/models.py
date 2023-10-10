@@ -59,8 +59,8 @@ class Journal(models.Model):
     
 class Rate(models.Model):
     date = models.DateField(verbose_name='Дата')
-    place = models.CharField(max_length=20, verbose_name='Место')
-    address = models.CharField(max_length=20, verbose_name='Адрес проведения')
+    place = models.CharField(max_length=100, verbose_name='Место')
+    address = models.CharField(max_length=150, verbose_name='Адрес проведения')
     rate = models.FloatField(blank=True, null=True, verbose_name='Оценка от новичков')
 
     class Meta:
