@@ -8,13 +8,19 @@ from bot.config import ADM_ID
 async def sendMsg(type):
     if type == 'text':
         async def msg_type(msg, msgs_id=None, ADM_ID=None, id=None):
-            if not msg.from_user.first_name:
-                name = msg.from_user.last_name
-            elif not msg.from_user.last_name:
-                name = msg.from_user.first_name
+            user = await dj.check_new_user(msg.from_user.id)
+            if user:
+                name = user.name
             else:
-                name = msg.from_user.first_name + " " + msg.from_user.last_name
+                if not msg.from_user.first_name:
+                    name = msg.from_user.last_name
+                elif not msg.from_user.last_name:
+                    name = msg.from_user.first_name
+                else:
+                    name = msg.from_user.first_name + " " + msg.from_user.last_name
             message = f'👆 <b>Сообщение от🗣:</b>\n{name}\nid {msg.from_user.id}'
+            if not user:
+                message += '\nПользователь не зарегистрирован\n'
             if id:
                 bot_msg = await bot.send_message(chat_id=id, text=msg.text)
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)
@@ -33,13 +39,19 @@ async def sendMsg(type):
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)
     elif type == 'voice':
         async def msg_type(msg, msgs_id=None, ADM_ID=None, id=None):
-            if not msg.from_user.first_name:
-                name = msg.from_user.last_name
-            elif not msg.from_user.last_name:
-                name = msg.from_user.first_name
+            user = await dj.check_new_user(msg.from_user.id)
+            if user:
+                name = user.name
             else:
-                name = msg.from_user.first_name + " " + msg.from_user.last_name
+                if not msg.from_user.first_name:
+                    name = msg.from_user.last_name
+                elif not msg.from_user.last_name:
+                    name = msg.from_user.first_name
+                else:
+                    name = msg.from_user.first_name + " " + msg.from_user.last_name
             message = f'👆 <b>Сообщение от🗣:</b>\n{name}\nid {msg.from_user.id}'
+            if not user:
+                message += '\nПользователь не зарегистрирован\n'
             if id:
                 bot_msg = await bot.send_voice(chat_id=id, voice=msg.voice.file_id)
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)
@@ -57,13 +69,19 @@ async def sendMsg(type):
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)
     elif type == 'contact':
         async def msg_type(msg, msgs_id=None, ADM_ID=None, id=None):
-            if not msg.from_user.first_name:
-                name = msg.from_user.last_name
-            elif not msg.from_user.last_name:
-                name = msg.from_user.first_name
+            user = await dj.check_new_user(msg.from_user.id)
+            if user:
+                name = user.name
             else:
-                name = msg.from_user.first_name + " " + msg.from_user.last_name
+                if not msg.from_user.first_name:
+                    name = msg.from_user.last_name
+                elif not msg.from_user.last_name:
+                    name = msg.from_user.first_name
+                else:
+                    name = msg.from_user.first_name + " " + msg.from_user.last_name
             message = f'👆 <b>Сообщение от🗣:</b>\n{name}\nid {msg.from_user.id}'
+            if not user:
+                message += '\nПользователь не зарегистрирован\n'
             if id:
                 bot_msg = await bot.send_contact(chat_id=id, first_name=msg.contact.first_name,
                                                 phone_number=msg.contact.phone_number)
@@ -85,13 +103,19 @@ async def sendMsg(type):
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)
     elif type == 'location':
         async def msg_type(msg, msgs_id=None, ADM_ID=None, id=None):
-            if not msg.from_user.first_name:
-                name = msg.from_user.last_name
-            elif not msg.from_user.last_name:
-                name = msg.from_user.first_name
+            user = await dj.check_new_user(msg.from_user.id)
+            if user:
+                name = user.name
             else:
-                name = msg.from_user.first_name + " " + msg.from_user.last_name
+                if not msg.from_user.first_name:
+                    name = msg.from_user.last_name
+                elif not msg.from_user.last_name:
+                    name = msg.from_user.first_name
+                else:
+                    name = msg.from_user.first_name + " " + msg.from_user.last_name
             message = f'👆 <b>Сообщение от🗣:</b>\n{name}\nid {msg.from_user.id}'
+            if not user:
+                message += '\nПользователь не зарегистрирован\n'
             if id:
                 bot_msg = await bot.send_location(chat_id=id, latitude=msg.location.latitude,
                                                 longitude=msg.location.longitude)
@@ -113,13 +137,19 @@ async def sendMsg(type):
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)
     elif type == 'sticker':
         async def msg_type(msg, msgs_id=None, ADM_ID=None, id=None):
-            if not msg.from_user.first_name:
-                name = msg.from_user.last_name
-            elif not msg.from_user.last_name:
-                name = msg.from_user.first_name
+            user = await dj.check_new_user(msg.from_user.id)
+            if user:
+                name = user.name
             else:
-                name = msg.from_user.first_name + " " + msg.from_user.last_name
+                if not msg.from_user.first_name:
+                    name = msg.from_user.last_name
+                elif not msg.from_user.last_name:
+                    name = msg.from_user.first_name
+                else:
+                    name = msg.from_user.first_name + " " + msg.from_user.last_name
             message = f'👆 <b>Сообщение от🗣:</b>\n{name}\nid {msg.from_user.id}'
+            if not user:
+                message += '\nПользователь не зарегистрирован\n'
             if id:
                 bot_msg = await bot.send_sticker(chat_id=id, sticker=msg.sticker.file_id)
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)
@@ -137,13 +167,19 @@ async def sendMsg(type):
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)
     elif type == 'photo':
         async def msg_type(msg, msgs_id=None, ADM_ID=None, id=None):
-            if not msg.from_user.first_name:
-                name = msg.from_user.last_name
-            elif not msg.from_user.last_name:
-                name = msg.from_user.first_name
+            user = await dj.check_new_user(msg.from_user.id)
+            if user:
+                name = user.name
             else:
-                name = msg.from_user.first_name + " " + msg.from_user.last_name
+                if not msg.from_user.first_name:
+                    name = msg.from_user.last_name
+                elif not msg.from_user.last_name:
+                    name = msg.from_user.first_name
+                else:
+                    name = msg.from_user.first_name + " " + msg.from_user.last_name
             message = f'👆 <b>Сообщение от🗣:</b>\n{name}\nid {msg.from_user.id}'
+            if not user:
+                message += '\nПользователь не зарегистрирован\n'
             if id:
                 bot_msg = await bot.send_photo(chat_id=id, photo=msg.photo[-1].file_id, caption=msg.caption)
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)
@@ -161,13 +197,19 @@ async def sendMsg(type):
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)
     elif type == 'video':
         async def msg_type(msg, msgs_id=None, ADM_ID=None, id=None):
-            if not msg.from_user.first_name:
-                name = msg.from_user.last_name
-            elif not msg.from_user.last_name:
-                name = msg.from_user.first_name
+            user = await dj.check_new_user(msg.from_user.id)
+            if user:
+                name = user.name
             else:
-                name = msg.from_user.first_name + " " + msg.from_user.last_name
+                if not msg.from_user.first_name:
+                    name = msg.from_user.last_name
+                elif not msg.from_user.last_name:
+                    name = msg.from_user.first_name
+                else:
+                    name = msg.from_user.first_name + " " + msg.from_user.last_name
             message = f'👆 <b>Сообщение от🗣:</b>\n{name}\nid {msg.from_user.id}'
+            if not user:
+                message += '\nПользователь не зарегистрирован\n'
             if id:
                 bot_msg = await bot.send_video(chat_id=id, video=msg.video.file_id, caption=msg.caption)
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)
@@ -185,13 +227,19 @@ async def sendMsg(type):
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)
     elif type == 'audio':
         async def msg_type(msg, msgs_id=None, ADM_ID=None, id=None):
-            if not msg.from_user.first_name:
-                name = msg.from_user.last_name
-            elif not msg.from_user.last_name:
-                name = msg.from_user.first_name
+            user = await dj.check_new_user(msg.from_user.id)
+            if user:
+                name = user.name
             else:
-                name = msg.from_user.first_name + " " + msg.from_user.last_name
+                if not msg.from_user.first_name:
+                    name = msg.from_user.last_name
+                elif not msg.from_user.last_name:
+                    name = msg.from_user.first_name
+                else:
+                    name = msg.from_user.first_name + " " + msg.from_user.last_name
             message = f'👆 <b>Сообщение от🗣:</b>\n{name}\nid {msg.from_user.id}'
+            if not user:
+                message += '\nПользователь не зарегистрирован\n'
             if id:
                 bot_msg = await bot.send_audio(chat_id=id, audio=msg.audio.file_id, caption=msg.caption)
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)
@@ -209,13 +257,19 @@ async def sendMsg(type):
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)
     elif type == 'document':
         async def msg_type(msg, msgs_id=None, ADM_ID=None, id=None):
-            if not msg.from_user.first_name:
-                name = msg.from_user.last_name
-            elif not msg.from_user.last_name:
-                name = msg.from_user.first_name
+            user = await dj.check_new_user(msg.from_user.id)
+            if user:
+                name = user.name
             else:
-                name = msg.from_user.first_name + " " + msg.from_user.last_name
+                if not msg.from_user.first_name:
+                    name = msg.from_user.last_name
+                elif not msg.from_user.last_name:
+                    name = msg.from_user.first_name
+                else:
+                    name = msg.from_user.first_name + " " + msg.from_user.last_name
             message = f'👆 <b>Сообщение от🗣:</b>\n{name}\nid {msg.from_user.id}'
+            if not user:
+                message += '\nПользователь не зарегистрирован\n'
             if id:
                 bot_msg = await bot.send_document(chat_id=id, document=msg.document.file_id, caption=msg.caption)
                 await dj.save_new_messages(msg.from_user.id, outgoing=msg.message_id, incoming=bot_msg.message_id)

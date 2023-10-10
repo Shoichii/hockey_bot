@@ -32,7 +32,11 @@ class Training(models.Model):
         verbose_name_plural = 'Тренировки'
 
     def __str__(self):
-        return self.address
+        for day in DAYS:
+            if self.day in day:
+                week_day = day[1]
+                break
+        return week_day
     
 
 class Journal(models.Model):
@@ -40,6 +44,8 @@ class Journal(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Участник')
     accept = models.BooleanField(verbose_name='Запись подтверждена', 
                                 blank=True, null=True)
+    answer_time = models.DateTimeField(verbose_name='Время ответа', blank=True, null=True)
+    previuos_answer = models.BooleanField(blank=True, null=True)
     second_not = models.BooleanField(default=False)
     date = models.DateField(verbose_name='Дата тренировки', blank=True, null=True)
     rate = models.IntegerField(blank=True, null=True, verbose_name='Оценка')

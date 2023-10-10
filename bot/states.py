@@ -6,6 +6,11 @@ class StartState(StatesGroup):
     name = State()
     birthday = State()
 
+class CahngeProfileState(StatesGroup):
+    phone_number = State()
+    name = State()
+    birthday = State()
+
 class Adm_State(StatesGroup):
     training_date = State()
 

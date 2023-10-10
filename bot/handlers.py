@@ -10,7 +10,8 @@ from bot.config import ADM_ID
 from bot.dialogue_utils import (send_dialogue_message,
                                 send_dialogue_message_with_media)
 from bot.loader import dp
-from bot.states import Adm_State, Dialogue_State, StartState
+from bot.states import Adm_State, Dialogue_State, StartState, CahngeProfileState
+from bot.utils import user_notification
 
 
 async def main_menu_message(msg):
@@ -27,10 +28,6 @@ async def main_menu_message(msg):
 #приветстви только новых пользователей бота
 @dp.message_handler(commands=['start'])
 async def start(msg: types.Message):
-    print(msg.from_user.id)
-    print(type(msg.from_user.id))
-    print(ADM_ID)
-    print(type(ADM_ID))
     if msg.from_user.id == ADM_ID:
         button_1 = types.KeyboardButton('Уже записались 🏒')
         button_2 = types.KeyboardButton('Оценки тренировок 📊')
@@ -81,6 +78,94 @@ async def cancel_dialogue(msg: types.Message, state: FSMContext):
     await msg.answer('Режим диалога выключен.')
     await state.finish()
 
+@dp.message_handler(commands=['training_today'])
+async def get_training_info(msg: types.Message):
+    if msg.from_user.id == ADM_ID:
+        await msg.answer('Эта команда для игроков')
+        return
+    training_data = await dj.get_training_info()
+    if not training_data:
+        await msg.answer('Запись на тренировку завершена')
+        return
+    if training_data == 'not today':
+        await msg.answer('На сегодня тренировок нет')
+        return
+    await user_notification({'id': msg.from_user.id} ,training_data, 'today', self_accept=True)
+
+async def get_user_profile(msg):
+    user_data = await dj.check_new_user(msg.from_user.id)
+    if not user_data:
+        await msg.answer('Войдите в профиль или зарегистрируйтесь')
+        return
+    name = user_data.name
+    phone = user_data.tel_number
+    birthday = user_data.birthday.strftime('%d.%m.%Y')
+    message = f'''
+ФИО: {name}
+Номер телефона: {phone}
+День рождения: {birthday}
+
+Что желаете изменить?
+'''
+    change_name_button = types.InlineKeyboardButton('Имя', callback_data='change_button_name')
+    change_phone_button = types.InlineKeyboardButton('Номер телефона', callback_data='change_button_phone')
+    change_birthday_button = types.InlineKeyboardButton('День рождения', callback_data='change_button_birthday')
+    keyboard = types.InlineKeyboardMarkup().row(change_name_button, change_phone_button).add(change_birthday_button)
+    await msg.answer(message, reply_markup=keyboard)
+
+@dp.message_handler(commands=['my_profile'])
+async def get_training_info(msg: types.Message):
+    if msg.from_user.id == ADM_ID:
+        await msg.answer('Эта команда для игроков')
+        return
+    await get_user_profile(msg)
+
+@dp.callback_query_handler(lambda call: call.data.startswith('change_button'))
+async def change_data(call: types.CallbackQuery):
+    await call.message.delete()
+    data_for_change = call.data.split('_')[2]
+    if data_for_change == 'name':
+        await call.message.answer('Напишите ФИО')
+        await CahngeProfileState.name.set()
+    if data_for_change == 'phone':
+        await call.message.answer('Напишите номер телефона в формате: 89000000000(числа подряд)')
+        await CahngeProfileState.phone_number.set()
+    if data_for_change == 'birthday':
+        await call.message.answer('Напишите день рождения в формате: 01.01.1970')
+        await CahngeProfileState.birthday.set()
+        
+
+@dp.message_handler(state=CahngeProfileState.name)
+async def change_name(msg: types.Message, state: FSMContext):
+    await dj.change_name(msg.from_user.id, msg.text)
+    await msg.answer('Имя изменено')
+    await get_user_profile(msg)
+    await state.finish()
+
+@dp.message_handler(state=CahngeProfileState.phone_number)
+async def change_phone(msg: types.Message, state: FSMContext):
+    if msg.text.isdigit() and len(msg.text) == 11:
+        await dj.change_phone(msg.from_user.id, msg.text)
+        await msg.answer('Номер телефона изменен')
+        await get_user_profile(msg)
+        await state.finish()
+    else:
+        await msg.answer('Неверный формат. Повторите ввод.')
+
+@dp.message_handler(state=CahngeProfileState.birthday)
+async def change_birthday(msg: types.Message, state: FSMContext):
+    regex = r"\d{2}\.\d{2}\.\d{4}"
+    if not re.search(regex, msg.text):
+        await msg.answer('Неверный формат даты. Повторите ввод.', reply_markup=cancel_reg_keyboard())
+        return
+    date_object = datetime.strptime(msg.text, "%d.%m.%Y")
+    birthday = date_object.strftime("%Y-%m-%d")
+    await dj.change_birthday(msg.from_user.id, birthday)
+    await msg.answer('Дата рождения изменена')
+    await get_user_profile(msg)
+    await state.finish()
+
+
 @dp.message_handler(is_media_group=False,
                     content_types=['text', 'audio', 'document', 'sticker', 'photo', 
                                 'video', 'voice', 'contact', 'location'],
@@ -93,6 +178,24 @@ async def dialog_handler(msg: types.Message):
                     state=Dialogue_State.start)
 async def dialog_handler_media(msg: types.Message, album: List[types.Message]):
     await send_dialogue_message_with_media(msg,album)
+
+async def show_users(msg):
+    users_data = await dj.get_accept_users()
+    if not users_data:
+        await msg.answer('Ещё никто не записался')
+        return
+    message = '''Уже записались:
+    
+'''
+    for user in users_data:
+        name = user.get('name')
+        birthday = user.get('birthday')
+        newbie = user.get('newbie')
+        if user.get('changed'):
+            message += f'-(Отказался) {name} {birthday} {newbie}\n'
+        else:
+            message += f'+ {name} {birthday} {newbie}\n'
+    await msg.answer(message)
 
 @dp.message_handler(is_media_group=False,
                     content_types=['text', 'audio', 'document', 'sticker', 'photo', 
@@ -108,15 +211,7 @@ async def dialog_handler(msg: types.Message):
             keyboard = types.InlineKeyboardMarkup().row(select_date_button, yesterday_training_button)
             await msg.answer(message, reply_markup=keyboard)
         elif msg.text == 'Уже записались 🏒':
-            message = '''
-Какую тренировку Вы хотите проверить?
-'''
-            tommorow_check_button = types.InlineKeyboardButton('Завтрашнюю', 
-                                                        callback_data='tomorrow_check_button')
-            today_check_button = types.InlineKeyboardButton('Сегодняшнюю', 
-                                                        callback_data='today_check_button')
-            keyboard = types.InlineKeyboardMarkup().row(tommorow_check_button, today_check_button)
-            await msg.answer(message, reply_markup=keyboard)
+            await show_users(msg)
         else:
             await send_dialogue_message(msg)
 
@@ -187,24 +282,6 @@ async def get_rates_by_date(msg: types.Message, state: FSMContext):
     await msg.answer(message)
     await state.finish()
 
-@dp.callback_query_handler(lambda call: call.data.endswith('check_button'))
-async def show_users(call: types.CallbackQuery):
-    await call.message.delete()
-    day = call.data.split('_')[0]
-    users_data = await dj.get_accept_users(day)
-    if not users_data:
-        await call.message.answer('Ещё никто не записался')
-        return
-    message = '''Уже записались:
-    
-'''
-    for user in users_data:
-        name = user.get('name')
-        birthday = user.get('birthday')
-        newbie = user.get('newbie')
-        message += f'{name} {birthday} {newbie}\n'
-    await call.message.answer(message)
-
 #вход для существующих пользователей
 @dp.callback_query_handler(lambda call: call.data == 'sign_in_button')
 async def sign_in(call: types.CallbackQuery):
@@ -227,7 +304,7 @@ async def get_tel_number(msg: types.Message, state: FSMContext):
 Возможно Вы записаны под другим номером телефона.</b>
 
 Вы можете:
-- Обратиться к тренеру.
+- Обратиться к тренеру (команда /dialogue).
 - Повторить вввод
 - Вернуться в главное меню и выполнить регистрацию''', reply_markup=keyboard)
             
@@ -317,7 +394,13 @@ async def get_birthday(msg: types.Message, state: FSMContext):
     birthday = date_object.strftime("%Y-%m-%d")
     user_id = msg.from_user.id
     await dj.add_new_user(name, phone_number, birthday, user_id)
-    await msg.answer('''Регистрация прошла успешно. Рады приветствовать!
+    await msg.answer(f'''
+ФИО: {name}
+Номер телефона: {phone_number}
+День рождения: {birthday}
+
+Регистрация прошла успешно. Рады приветствовать!
+Вы всегда можете изменить свои данные с помощью команды /my_profile
 Совсем скоро я сообщу Вам место и время проведения Вашей первой тренировки в нашем клубе.''')
     await state.finish()
 
@@ -332,7 +415,7 @@ async def first_accept(call: types.CallbackQuery):
     date_obj = datetime.strptime(date_str, "%d.%m.%Y")
     date = date_obj.strftime("%Y-%m-%d")
     today = datetime.today().date()
-    training_data = await dj.training_data(date, call.from_user.id)
+    training_data = await dj.accept_training(date, call.from_user.id)
 
     now = datetime.now()
     current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
@@ -343,16 +426,13 @@ async def first_accept(call: types.CallbackQuery):
     training_time = training_data.get('time').strftime("%H:%M")
     training_place = training_data.get('place')
     training_address = training_data.get('address')
-    if today == date:
-        when = 'сегодня'
-    else:
-        when = 'завтра'
+    
     map_address = training_address.replace(' ', '%20')
     url = f'https://yandex.ru/maps/?text={map_address}&z=17&l=map,trf'
     message = f'''
 <b>Запись прошла успешно!</b>
 
-Ждём Вас {when} в {training_time}.
+Ждём Вас сегодня в {training_time}.
 Адрес: {training_place}, {training_address}
 
 <a href="{url}">Построить маршрут</a>'''
