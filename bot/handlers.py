@@ -397,7 +397,7 @@ async def get_birthday(msg: types.Message, state: FSMContext):
     await msg.answer(f'''
 ФИО: {name}
 Номер телефона: {phone_number}
-День рождения: {birthday}
+День рождения: {msg.text}
 
 Регистрация прошла успешно. Рады приветствовать!
 Вы всегда можете изменить свои данные с помощью команды /my_profile
