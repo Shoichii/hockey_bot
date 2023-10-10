@@ -6,7 +6,7 @@ from bot.config import DAYS
 class User(models.Model):
     name = models.CharField(max_length=50, verbose_name='ФИО')
     tel_number = models.CharField(max_length=16, verbose_name='Телефон', help_text='В формате: 8000000000')
-    telegram_id = models.IntegerField(verbose_name='Телеграм ID', blank=True, null=True)
+    telegram_id = models.BigIntegerField(verbose_name='Телеграм ID', blank=True, null=True)
     birthday = models.DateField(verbose_name='День рождения', blank=True, null=True)
     newbie = models.BooleanField(default=False, verbose_name='Новичок?')
 
