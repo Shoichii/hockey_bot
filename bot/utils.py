@@ -108,7 +108,7 @@ async def training_checker():
         training_time = trainings.get('today').get('time')
         training_hours = int(training_time.hour)
         difference_hours = training_hours - current_hours
-        if 4 < difference_hours <= 6:
+        if 4 < difference_hours <= 13:
             not_data = await dj.get_users_for_first_not(trainings.get('today').get('day'))
             if not not_data:
                 return
