@@ -21,8 +21,7 @@ async def user_notification(user_data, training_data, when, self_accept=None):
     time = training_data.get('time').strftime("%H:%M")
     place = training_data.get('place')
     address = training_data.get('address')
-    map_address = address.replace(' ', '%20')
-    url = f'https://yandex.ru/maps/?text={map_address}&z=17&l=map,trf'
+    url = training_data.get('route')
     message = f'''Уважаемый хоккеист!
 <b>{alarm}</b>
 {when}{date}
@@ -40,7 +39,7 @@ async def user_notification(user_data, training_data, when, self_accept=None):
     declain_button = types.InlineKeyboardButton('➖', callback_data='declain_button')
     keyboard = types.InlineKeyboardMarkup().row(declain_button, second_accept_button)
     try:
-        await bot.send_message(chat_id=user_data.get('id'), text=message, reply_markup=keyboard)
+        await bot.send_message(disable_web_page_preview=True, chat_id=user_data.get('id'), text=message, reply_markup=keyboard)
         if not self_accept:
             await dj.make_entry(user_data.get('id'), training_data, user_data.get('first_not'))
         else:
@@ -71,8 +70,7 @@ async def game_notification(user, game):
     name = user.get('name')
     place = game.place
     address = game.address
-    map_address = address.replace(' ', '%20')
-    url = f'https://yandex.ru/maps/?text={map_address}&z=17&l=map,trf'
+    url = game.route
     message = f'''
 Уважаемый, {name}
 
@@ -82,7 +80,7 @@ async def game_notification(user, game):
 <a href="{url}">Построить маршрут</a>
 '''
     id = user.get('id')
-    await bot.send_message(chat_id=id, text=message)
+    await bot.send_message(disable_web_page_preview=True, chat_id=id, text=message)
 
 async def training_checker():
     now = datetime.now()

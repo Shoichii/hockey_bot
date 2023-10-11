@@ -473,8 +473,7 @@ async def first_accept(call: types.CallbackQuery):
     training_place = training_data.get('place')
     training_address = training_data.get('address')
     
-    map_address = training_address.replace(' ', '%20')
-    url = f'https://yandex.ru/maps/?text={map_address}&z=17&l=map,trf'
+    url = training_data.get('route')
     message = f'''
 <b>Запись прошла успешно!</b>
 
@@ -482,7 +481,7 @@ async def first_accept(call: types.CallbackQuery):
 Адрес: {training_place}, {training_address}
 
 <a href="{url}">Построить маршрут</a>'''
-    await call.message.answer(message)
+    await call.message.answer(message, disable_web_page_preview=True)
 
 @dp.callback_query_handler(lambda call: call.data == 'declain_button')
 async def declain(call: types.CallbackQuery):

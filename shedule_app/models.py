@@ -26,6 +26,7 @@ class Training(models.Model):
     place = models.CharField(max_length=100,verbose_name='Место проведения')
     address = models.CharField(max_length=100, verbose_name='Адрес проведения')
     was_end = models.BooleanField(default=False, verbose_name='Завершена')
+    route = models.URLField(verbose_name='Ссылка на маршрут')
 
     class Meta:
         verbose_name = 'Тренировка'
@@ -94,6 +95,7 @@ class Team(models.Model):
 class Game(models.Model):
     place = models.CharField(max_length=50, verbose_name='Место')
     address = models.CharField(max_length=50, verbose_name='Адрес')
+    route = models.URLField(verbose_name='Ссылка на маршрут')
     date_time = models.DateTimeField(verbose_name='Дата и время')
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, verbose_name='Команда', null=True)
 

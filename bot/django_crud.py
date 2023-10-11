@@ -156,6 +156,7 @@ def accept_training(date,user_id):
             'time': training.time,
             'place': training.place,
             'address': training.address,
+            'route': training.route
         }
     else:
         journal_entry.previuos_answer = journal_entry.accept
@@ -169,6 +170,7 @@ def accept_training(date,user_id):
             'time': journal_entry.training.time,
             'place': journal_entry.training.place,
             'address': journal_entry.training.address,
+            'route': journal_entry.training.route
         }
     return training_data
 
@@ -254,6 +256,7 @@ def get_users_for_first_not(day):
         'time': training.time,
         'place': training.place,
         'address': training.address,
+        'route': training.route,
     }
     return {
         'users_data': users_data,
@@ -292,6 +295,7 @@ def get_users_for_second_not(day):
         'time': training.time,
         'place': training.place,
         'address': training.address,
+        'route': training.route,
     }
     return {
         'users_data': users_data,
@@ -318,6 +322,7 @@ def get_training_info():
         'time': training.time,
         'place': training.place,
         'address': training.address,
+        'route': training.route,
     }
     return training_data
 
