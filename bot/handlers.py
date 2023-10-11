@@ -9,7 +9,7 @@ from bot import django_crud as dj
 from bot.config import ADM_ID
 from bot.dialogue_utils import (send_dialogue_message,
                                 send_dialogue_message_with_media)
-from bot.loader import dp
+from bot.loader import dp, bot
 from bot.states import Adm_State, Dialogue_State, StartState, CahngeProfileState
 from bot.utils import user_notification
 
@@ -31,7 +31,9 @@ async def start(msg: types.Message):
     if msg.from_user.id == ADM_ID:
         button_1 = types.KeyboardButton('Уже записались 🏒')
         button_2 = types.KeyboardButton('Оценки тренировок 📊')
+        button_3 = types.KeyboardButton('Рупор 📢')
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        keyboard.row(button_3)
         keyboard.row(button_2, button_1)
         await msg.answer('Добро пожаловать! Админ-мод включен.', reply_markup=keyboard)
     else:
@@ -107,7 +109,7 @@ async def get_user_profile(msg):
 
 Что желаете изменить?
 '''
-    change_name_button = types.InlineKeyboardButton('Имя', callback_data='change_button_name')
+    change_name_button = types.InlineKeyboardButton('ФИО', callback_data='change_button_name')
     change_phone_button = types.InlineKeyboardButton('Номер телефона', callback_data='change_button_phone')
     change_birthday_button = types.InlineKeyboardButton('День рождения', callback_data='change_button_birthday')
     keyboard = types.InlineKeyboardMarkup().row(change_name_button, change_phone_button).add(change_birthday_button)
@@ -212,9 +214,53 @@ async def dialog_handler(msg: types.Message):
             await msg.answer(message, reply_markup=keyboard)
         elif msg.text == 'Уже записались 🏒':
             await show_users(msg)
+        elif msg.text == 'Рупор 📢':
+            await msg.answer('Напишите сообщения для всех игроков. (Сообщение может содержать текст и одну картинку)')
+            await Adm_State.megaphone.set()
         else:
             await send_dialogue_message(msg)
 
+@dp.message_handler(state=Adm_State.megaphone, content_types=['text', 'photo'])
+async def save_message_to_state(msg: types.Message, state: FSMContext):
+    if msg.content_type == 'text':
+        await state.update_data(text=msg.text, photo=None)
+    if msg.content_type == 'photo':
+        await state.update_data(text=msg.caption, photo=msg.photo[-1].file_id)
+    cancel_megaphone_button = types.InlineKeyboardButton('Отмена', callback_data='cancel_megaphone_button')
+    send_megaphone_button = types.InlineKeyboardButton('Отправить', callback_data='send_megaphone_button')
+    keyboard = types.InlineKeyboardMarkup().row(cancel_megaphone_button, send_megaphone_button)
+    await msg.answer('''
+Отправить?
+
+Внимание. Можно отправить только одно сообщение - последнее из написаных.
+Если Вы хотите отправить другое, то просто напишите новое сообщение.
+''', reply_markup=keyboard)
+
+@dp.callback_query_handler(lambda call: call.data == 'cancel_megaphone_button', state=Adm_State.megaphone)
+async def cancel_megaphone(call: types.CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    await call.message.answer('Отправка отменена.')
+    await state.finish()
+
+@dp.callback_query_handler(lambda call: call.data == 'send_megaphone_button', state=Adm_State.megaphone)
+async def send_megaphone(call: types.CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    users_ids = await dj.get_users_ids()
+    state_data = await state.get_data()
+    state_text = state_data.get('text')
+    state_photo = state_data.get('photo')
+    for_del = await call.message.answer('📩 Рассылаю...')
+    for id in users_ids:
+        try:
+            if state_photo:
+                await bot.send_photo(chat_id=id, photo=state_photo, caption=state_text)
+            else:
+                await bot.send_message(chat_id=id, text=state_text)
+        except Exception as e:
+            print(e)
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=for_del.message_id)
+    await call.message.answer('Сообщение отправлено.')
+    await state.finish()
 
 @dp.message_handler(is_media_group=True, content_types=['audio', 'document', 'photo', 'video'])
 async def dialog_handler_media(msg: types.Message, album: List[types.Message]):

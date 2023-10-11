@@ -9,6 +9,12 @@ def check_new_user(user_id):
     return tg_id
 
 @sync_to_async()
+def get_users_ids():
+    users = mdl.User.objects.filter(telegram_id__isnull=False).all()
+    telegram_ids = [user.telegram_id for user in users]
+    return telegram_ids
+
+@sync_to_async()
 def change_phone(user_id, phone):
     user = mdl.User.objects.filter(telegram_id=user_id).first()
     user.tel_number = phone

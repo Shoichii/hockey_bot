@@ -13,6 +13,9 @@ class CahngeProfileState(StatesGroup):
 
 class Adm_State(StatesGroup):
     training_date = State()
+    megaphone = State()
+    text = State()
+    photo = State()
 
 class Dialogue_State(StatesGroup):
     start = State()
