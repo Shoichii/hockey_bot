@@ -92,7 +92,7 @@ async def get_training_info(msg: types.Message):
     if training_data == 'not today':
         await msg.answer('На сегодня тренировок нет')
         return
-    await user_notification({'id': msg.from_user.id} ,training_data, 'today', self_accept=True)
+    await user_notification({'id': msg.from_user.id, 'first_not': True} ,training_data, 'today')
 
 async def get_user_profile(msg):
     user_data = await dj.check_new_user(msg.from_user.id)

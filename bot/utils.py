@@ -6,7 +6,7 @@ from bot.loader import bot
 from datetime import datetime, timedelta
 
 
-async def user_notification(user_data, training_data, when, self_accept=None):
+async def user_notification(user_data, training_data, when):
     alarm = ''
     if user_data.get('truant'):
         alarm = 'Вы давно не посещали тренировку. Ждём Вас снова!'
@@ -40,10 +40,7 @@ async def user_notification(user_data, training_data, when, self_accept=None):
     keyboard = types.InlineKeyboardMarkup().row(declain_button, second_accept_button)
     try:
         await bot.send_message(disable_web_page_preview=True, chat_id=user_data.get('id'), text=message, reply_markup=keyboard)
-        if not self_accept:
-            await dj.make_entry(user_data.get('id'), training_data, user_data.get('first_not'))
-        else:
-            await dj.change_entry(user_data.get('id'), training_data)
+        await dj.make_entry(user_data.get('id'), training_data, user_data.get('first_not'))
     except Exception as e:
         print(e)
 
@@ -102,6 +99,7 @@ async def training_checker():
         
     if trainings.get('today'):
         current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
+        # current_time = datetime.strptime('18:00:00', '%H:%M:%S').time()
         current_hours = int(current_time.hour)
         training_time = trainings.get('today').get('time')
         training_hours = int(training_time.hour)
@@ -150,8 +148,8 @@ async def game_checker():
 
 
 async def scheduler():
-    aioschedule.every(60).seconds.do(training_checker)
-    aioschedule.every(60).seconds.do(game_checker)
+    aioschedule.every(30).seconds.do(training_checker)
+    aioschedule.every(30).seconds.do(game_checker)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)

@@ -268,7 +268,7 @@ def get_users_for_second_not(day):
     now = datetime.now()
     today = now.date()
     training = mdl.Training.objects.filter(day=day, was_end=False).first()
-    entries = mdl.Journal.objects.filter(date=today, second_not=False).all()
+    entries = mdl.Journal.objects.filter(date=today, accept=None, second_not=False).all()
     
     users_data = []
     users = mdl.User.objects.filter(telegram_id__isnull=False).all()
@@ -341,23 +341,6 @@ def make_entry(user_telegram_id, training_data, is_first_not):
         entry = mdl.Journal.objects.filter(user=user, date=training_data.get('date')).first()
         entry.second_not = True
         entry.save()
-
-@sync_to_async()
-def change_entry(user_telegram_id, training_data):
-    user = mdl.User.objects.filter(telegram_id=user_telegram_id).first()
-    training = mdl.Training.objects.filter(day=training_data.get('day')).first()
-    entry = mdl.Journal.objects.filter(user=user, date=training_data.get('date')).first()
-    if entry:
-        entry.second_not = True
-        entry.save()
-    else:
-        new_entry = mdl.Journal.objects.create(
-                training=training,
-                user=user,
-                date = training_data.get('date'),
-                second_not = True
-            )
-        new_entry.save()
 
 @sync_to_async()
 def get_users_for_not_yesterday(day):
