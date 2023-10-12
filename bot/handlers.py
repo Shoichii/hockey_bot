@@ -181,23 +181,46 @@ async def dialog_handler(msg: types.Message):
 async def dialog_handler_media(msg: types.Message, album: List[types.Message]):
     await send_dialogue_message_with_media(msg,album)
 
+#для разбивки крупного сообщения
+def split_message(message, max_length=4096):
+    """Разбивает сообщение на части, не превышающие max_length символов."""
+    return [message[i:i+max_length] for i in range(0, len(message), max_length)]
+
 async def show_users(msg):
     users_data = await dj.get_accept_users()
     if not users_data:
         await msg.answer('Ещё никто не записался')
         return
-    message = '''Уже записались:
+    message1 = '''Уже записались:
     
 '''
+    message2 = '''
+
+Передумали и отказались:
+
+'''
+    counter1 = 0
+    counter2 = 0
     for user in users_data:
         name = user.get('name')
         birthday = user.get('birthday')
         newbie = user.get('newbie')
         if user.get('changed'):
-            message += f'-(Отказался) {name} {birthday} {newbie}\n'
+            counter2 += 1
+            message2 += f'{counter2}) {name} {birthday} {newbie}\n'
         else:
-            message += f'+ {name} {birthday} {newbie}\n'
-    await msg.answer(message)
+            counter1 += 1
+            message1 += f'{counter1}) {name} {birthday} {newbie}\n'
+
+
+    message = message1 + message2
+    try:
+        await msg.answer(message)
+    except Exception as e:
+        if str(e) == 'Message is too long':
+            parts = split_message(message, max_length=4096)
+            for part in parts:
+                await msg.answer(part)
 
 @dp.message_handler(is_media_group=False,
                     content_types=['text', 'audio', 'document', 'sticker', 'photo', 
@@ -461,19 +484,28 @@ async def first_accept(call: types.CallbackQuery):
     date_obj = datetime.strptime(date_str, "%d.%m.%Y")
     date = date_obj.strftime("%Y-%m-%d")
     today = datetime.today().date()
-    training_data = await dj.accept_training(date, call.from_user.id)
+    training_data_first = await dj.get_training_data_for_accept(date, call.from_user.id)
 
     now = datetime.now()
+    # раскоментировать и создать файл time.txt для имитации текущего времени
+    # в файл записать время в формате 09:00:00
+    # time_str = ''
+    # with open('Bot/time.txt', 'r') as file:
+    #     # Считываем первую строку файлаnow
+    #     time_str = file.readline().strip()
+    # current_time = datetime.strptime(time_str, '%H:%M:%S').time()
     current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
-    if today >= training_data.get('date') and current_time >= training_data.get('time'):
+    if today >= training_data_first.get('date') and current_time >= training_data_first.get('time'):
+        await call.message.delete()
         await call.message.answer('Запись на занятие окончена. Обратитесь к тренеру.')
         return
     await call.message.delete()
-    training_time = training_data.get('time').strftime("%H:%M")
-    training_place = training_data.get('place')
-    training_address = training_data.get('address')
+    training_data_second = await dj.accept_training(date, call.from_user.id)
+    training_time = training_data_first.get('time').strftime("%H:%M")
+    training_place = training_data_second.get('place')
+    training_address = training_data_second.get('address')
     
-    url = training_data.get('route')
+    url = training_data_second.get('route')
     message = f'''
 <b>Запись прошла успешно!</b>
 

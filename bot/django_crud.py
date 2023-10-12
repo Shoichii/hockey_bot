@@ -135,68 +135,45 @@ def get_trainings(days):
 #     }
 
 @sync_to_async()
+def get_training_data_for_accept(date,user_id):
+    user = mdl.User.objects.filter(telegram_id=user_id).first()
+    journal_entry = mdl.Journal.objects.filter(user=user, date=date).first()
+    training_data = {
+        'date': journal_entry.date,
+        'time': journal_entry.training.time,
+    }
+    return training_data
+
+
+@sync_to_async()
 def accept_training(date,user_id):
     user = mdl.User.objects.filter(telegram_id=user_id).first()
     journal_entry = mdl.Journal.objects.filter(user=user, date=date).first()
-    if not journal_entry:
-        now = datetime.now()
-        week_day = now.strftime("%A").lower()
-        training = mdl.Training.objects.filter(day=week_day, was_end=False).first() 
-        new_entry = mdl.Journal.objects.create(
-            training=training,
-            user=user,
-            date=date,
-            accept=True,
-            second_not = True,
-            answer_time = now
-            )
-        new_entry.save()
-        training_data = {
-            'date': datetime.strptime(date, '%Y-%m-%d').date(),
-            'time': training.time,
-            'place': training.place,
-            'address': training.address,
-            'route': training.route
-        }
-    else:
-        journal_entry.previuos_answer = journal_entry.accept
-        journal_entry.accept = True
-        journal_entry.second_not = True
-        journal_entry.answer_time = datetime.now()
-        journal_entry.save()
+    
+    journal_entry.previuos_answer = journal_entry.accept
+    journal_entry.accept = True
+    journal_entry.second_not = True
+    journal_entry.answer_time = datetime.now()
+    journal_entry.save()
 
-        training_data = {
-            'date': journal_entry.date,
-            'time': journal_entry.training.time,
-            'place': journal_entry.training.place,
-            'address': journal_entry.training.address,
-            'route': journal_entry.training.route
-        }
+    training_data = {
+        'date': journal_entry.date,
+        'time': journal_entry.training.time,
+        'place': journal_entry.training.place,
+        'address': journal_entry.training.address,
+        'route': journal_entry.training.route
+    }
     return training_data
 
 @sync_to_async()
 def declain_training(date,user_id):
     user = mdl.User.objects.filter(telegram_id=user_id).first()
     journal_entry = mdl.Journal.objects.filter(user=user, date=date).first()
-    if not journal_entry:
-        now = datetime.now()
-        week_day = now.strftime("%A").lower()
-        training = mdl.Training.objects.filter(day=week_day, was_end=False).first() 
-        new_entry = mdl.Journal.objects.create(
-            training=training,
-            user=user,
-            date=date,
-            accept=False,
-            second_not = True,
-            answer_time = now
-            )
-        new_entry.save()
-    else:
-        journal_entry.previuos_answer = journal_entry.accept
-        journal_entry.accept = False
-        journal_entry.second_not = True
-        journal_entry.answer_time = datetime.now()
-        journal_entry.save()
+    journal_entry.previuos_answer = journal_entry.accept
+    journal_entry.accept = False
+    journal_entry.second_not = True
+    journal_entry.answer_time = datetime.now()
+    journal_entry.save()
 
 @sync_to_async()
 def get_users_for_first_not(day):
@@ -240,7 +217,7 @@ def get_users_for_first_not(day):
                 })
         else:
             #если пользователь ни разу не был на тренировках и сегодня
-            #добавился в бота, то нужно сделать запись и оповестить его
+            #добавился в бота оповестить его
             users_data.append({
                 'id': user.telegram_id,
                 'name': user.name,
@@ -304,6 +281,12 @@ def get_users_for_second_not(day):
 
 @sync_to_async()
 def get_training_info():
+    # раскоментировать и создать файл time.txt для имитации текущего времени
+    # в файл записать время в формате 09:00:00
+    # time_str = ''
+    # with open('Bot/time.txt', 'r') as file:
+    #     # Считываем первую строку файла
+    #     time_str = file.readline().strip()
     now = datetime.now()
     today = now.date()
     week_day = now.strftime("%A").lower()
@@ -311,6 +294,7 @@ def get_training_info():
     if not training:
         return 'not today'
     current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
+    # current_time = datetime.strptime(time_str, '%H:%M:%S').time()
     current_hours = int(current_time.hour)
     training_time = training.time
     training_hours = int(training_time.hour)
@@ -327,18 +311,23 @@ def get_training_info():
     return training_data
 
 @sync_to_async()
-def make_entry(user_telegram_id, training_data, is_first_not):
+def make_entry(user_telegram_id, training_data, newbie=False):
     user = mdl.User.objects.filter(telegram_id=user_telegram_id).first()
     training = mdl.Training.objects.filter(day=training_data.get('day')).first()
-    if is_first_not:
+    entry = mdl.Journal.objects.filter(user=user, date=training_data.get('date')).first()
+    if not entry:
+        if newbie:
+            second_not = True
+        else:
+            second_not = False
         new_entry = mdl.Journal.objects.create(
             training=training,
             user=user,
             date = training_data.get('date'),
+            second_not=second_not
         )
         new_entry.save()
     else:
-        entry = mdl.Journal.objects.filter(user=user, date=training_data.get('date')).first()
         entry.second_not = True
         entry.save()
 
@@ -430,8 +419,6 @@ def get_accept_users():
             changed = False
             if journal_entry.accept == False and journal_entry.previuos_answer:
                 changed = True
-                journal_entry.previuos_answer = None
-                journal_entry.save()
             users_data.append({
                 'name': journal_entry.user.name,
                 'birthday': birthday,
