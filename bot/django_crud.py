@@ -194,16 +194,18 @@ def get_users_for_first_not(day):
         #в журнале, поэтому проверяем. если тренировки есть
         if user_trainings:
             # смотрим сколько пропущенных подряд было до этого из последних 6ти
-            missed_trainings = user_trainings[:6]
-            missed_counter = 0
-            for missed_training in missed_trainings:
-                if not missed_training.accept:
-                    missed_counter += 1
-                else:
-                    break
-            if missed_counter == 6:
-                #если пропущенных 6 подряд, то объявлем клиента прогульщиком
-                truant = True
+            last_trainings = len(user_trainings)-6
+            if last_trainings >= 0:
+                missed_trainings = user_trainings[last_trainings:]
+                missed_counter = 0
+                for missed_training in missed_trainings:
+                    if not missed_training.accept:
+                        missed_counter += 1
+                    else:
+                        break
+                if missed_counter == 6:
+                    #если пропущенных 6 подряд, то объявлем клиента прогульщиком
+                    truant = True
             #далее смотрим есть ли у него запись на сегодняшнюю тренировку
             #если он останавливал бота и снова его запустил, то записи может и не быть
             journal_entry = user_trainings.filter(date=formatted_date).first()
@@ -338,7 +340,7 @@ def get_users_for_not_yesterday(day):
     #ищем эту тренировку среди всех записей в журнале
     journal_entries = mdl.Journal.objects.filter(training=training).all()
     #берём последнюю запись с этой тренировкой
-    last_journal_entry = journal_entries[0]
+    last_journal_entry = journal_entries[len(journal_entries)-1]
     #находим все записи с такой же датой и этой же тренировкой
     journal_entries = journal_entries.filter(date=last_journal_entry.date).all()
     users_data = []
