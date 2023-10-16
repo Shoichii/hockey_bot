@@ -22,10 +22,14 @@ async def user_notification(user_data, training_data, when):
     place = training_data.get('place')
     address = training_data.get('address')
     url = training_data.get('route')
+    if training_data.get('day') == 'friday':
+        training_type = '( *игровая тренировка* )'
+    else:
+        training_type = '( *тренировка* )'
     message = f'''Уважаемый хоккеист!
 <b>{alarm}</b>
 {when}{date}
-🕖Лёд в {time}( *тренировка* ) 
+🕖Лёд в {time}{training_type} 
 🏟Стадион: {place} 
 {address}
 
@@ -46,13 +50,13 @@ async def user_notification(user_data, training_data, when):
 
 async def rate_notification(user, training_id):
     message = '''
-Оцените пожалуйста Вашу первую тренировку.
+Оцените пожалуйста тренировку.
 '''
-    rate_button_1 = types.InlineKeyboardButton('1', callback_data=f'rate_button_1_{training_id}')
-    rate_button_2 = types.InlineKeyboardButton('2', callback_data=f'rate_button_2_{training_id}')
-    rate_button_3 = types.InlineKeyboardButton('3', callback_data=f'rate_button_3_{training_id}')
-    rate_button_4 = types.InlineKeyboardButton('4', callback_data=f'rate_button_4_{training_id}')
-    rate_button_5 = types.InlineKeyboardButton('5', callback_data=f'rate_button_5_{training_id}')
+    rate_button_1 = types.InlineKeyboardButton('1🌟', callback_data=f'rate_button_1_{training_id}')
+    rate_button_2 = types.InlineKeyboardButton('2🌟', callback_data=f'rate_button_2_{training_id}')
+    rate_button_3 = types.InlineKeyboardButton('3🌟', callback_data=f'rate_button_3_{training_id}')
+    rate_button_4 = types.InlineKeyboardButton('4🌟', callback_data=f'rate_button_4_{training_id}')
+    rate_button_5 = types.InlineKeyboardButton('5🌟', callback_data=f'rate_button_5_{training_id}')
     keyboard = types.InlineKeyboardMarkup().row(rate_button_1, rate_button_2, rate_button_3,
                                             rate_button_4, rate_button_5)
     try:
@@ -154,8 +158,8 @@ async def game_checker():
 
 
 async def scheduler():
-    aioschedule.every(30).seconds.do(training_checker)
-    aioschedule.every(30).seconds.do(game_checker)
+    aioschedule.every(5).seconds.do(training_checker)
+    aioschedule.every(5).seconds.do(game_checker)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
