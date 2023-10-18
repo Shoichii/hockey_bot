@@ -33,14 +33,13 @@ async def user_notification(user_data, training_data, when):
 🏟Стадион: {place} 
 {address}
 
-Нажмите на кнопку "+" для записи.
-Или "-", чтобы отклонить запись.
+Вы пойдёте на тренировку?
 Спасибо.
 
 <a href="{url}">Построить маршрут</a>
 '''
-    second_accept_button = types.InlineKeyboardButton('➕', callback_data='accept_button')
-    declain_button = types.InlineKeyboardButton('➖', callback_data='declain_button')
+    second_accept_button = types.InlineKeyboardButton('Пойду', callback_data='accept_button')
+    declain_button = types.InlineKeyboardButton('Не пойду', callback_data='declain_button')
     keyboard = types.InlineKeyboardMarkup().row(declain_button, second_accept_button)
     try:
         await bot.send_message(disable_web_page_preview=True, chat_id=user_data.get('id'), text=message, reply_markup=keyboard)
@@ -81,7 +80,11 @@ async def game_notification(user, game):
 <a href="{url}">Построить маршрут</a>
 '''
     id = user.get('id')
-    await bot.send_message(disable_web_page_preview=True, chat_id=id, text=message)
+    try:
+        await bot.send_message(disable_web_page_preview=True, chat_id=id, text=message)
+        await dj.make_game_entry(game.date_time, user.get('telegram_id'))
+    except Exception as e:
+        print(e)
 
 async def training_checker():
     now = datetime.now()
@@ -158,8 +161,8 @@ async def game_checker():
 
 
 async def scheduler():
-    aioschedule.every(5).seconds.do(training_checker)
-    aioschedule.every(5).seconds.do(game_checker)
+    aioschedule.every(30).seconds.do(training_checker)
+    aioschedule.every(30).seconds.do(game_checker)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)

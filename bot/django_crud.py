@@ -523,13 +523,19 @@ def get_users_game_notfn(date_time):
                 'id': telegram_id,
                 'name': name
             })
-            new_entry = mdl.GameJournal.objects.create(
-                game = game,
-                user = user,
-                date_time = date_time
-            )
-            new_entry.save()
     if len(users_data) == 0:
         return None
     return users_data
 
+@sync_to_async()
+def make_game_entry(date_time, user_id):
+    game = mdl.Game.objects.filter(date_time=date_time).first()
+    for user in game.team.users.all():
+        journal_entry = mdl.GameJournal.objects.filter(date_time=date_time, user=user).first()
+        if not journal_entry:
+            new_entry = mdl.GameJournal.objects.create(
+                    game = game,
+                    user = user,
+                    date_time = date_time
+                )
+            new_entry.save()
