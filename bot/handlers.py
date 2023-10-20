@@ -476,15 +476,8 @@ async def get_birthday(msg: types.Message, state: FSMContext):
 #запись на занятие
 @dp.callback_query_handler(lambda call: call.data == 'accept_button')
 async def first_accept(call: types.CallbackQuery):
-    date_str = call.message.text.split('\n\n')[1].split('\n')[0].split(' ')
-    if len(date_str) == 2:
-        date_str = date_str[1]
-    if len(date_str) == 3:
-        date_str = date_str[2]
-    date_obj = datetime.strptime(date_str, "%d.%m.%Y")
-    date = date_obj.strftime("%Y-%m-%d")
     today = datetime.today().date()
-    training_data_first = await dj.get_training_data_for_accept(date, call.from_user.id)
+    training_data_first = await dj.get_training_data_for_accept(today, call.from_user.id)
 
     now = datetime.now()
     # раскоментировать и создать файл time.txt для имитации текущего времени
