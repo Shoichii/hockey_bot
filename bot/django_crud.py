@@ -539,3 +539,32 @@ def make_game_entry(date_time, user_id):
                     date_time = date_time
                 )
             new_entry.save()
+
+
+@sync_to_async()
+def get_game_data_for_accept(game_id, user_telegram_id):
+    game = mdl.Game.objects.filter(id=game_id).first()
+    user = mdl.User.objects.filter(telegram_id=user_telegram_id).first()
+    journal_entry = mdl.GameJournal.objects.filter(game=game, user=user).first()
+    return {
+        'datetime': journal_entry.date_time,
+        'place': game.place,
+        'address': game.address,
+        'route': game.route,
+    }
+
+@sync_to_async()
+def accept_game(game_id, user_telegram_id):
+    game = mdl.Game.objects.filter(id=game_id).first()
+    user = mdl.User.objects.filter(telegram_id=user_telegram_id).first()
+    journal_entry = mdl.GameJournal.objects.filter(game=game, user=user).first()
+    journal_entry.accept = True
+    journal_entry.save()
+
+@sync_to_async()
+def declain_game(game_id, user_telegram_id):
+    game = mdl.Game.objects.filter(id=game_id).first()
+    user = mdl.User.objects.filter(telegram_id=user_telegram_id).first()
+    journal_entry = mdl.GameJournal.objects.filter(game=game, user=user).first()
+    journal_entry.accept = False
+    journal_entry.save()

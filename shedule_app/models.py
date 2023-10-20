@@ -111,6 +111,10 @@ class GameJournal(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE, verbose_name='Игра')
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Участник')
     date_time = models.DateTimeField(verbose_name='Дата игры', blank=True, null=True)
+    accept = models.BooleanField(verbose_name='Запись подтверждена', 
+                                blank=True, null=True)
+    previuos_answer = models.BooleanField(blank=True, null=True)
+    answer_time = models.DateTimeField(verbose_name='Время ответа', blank=True, null=True)
 
     class Meta:
         verbose_name = 'Журнал игр'

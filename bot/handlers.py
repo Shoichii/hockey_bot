@@ -493,14 +493,14 @@ async def first_accept(call: types.CallbackQuery):
         await call.message.answer('Запись на занятие окончена. Обратитесь к тренеру.')
         return
     await call.message.delete()
-    training_data_second = await dj.accept_training(date, call.from_user.id)
+    training_data_second = await dj.accept_training(today, call.from_user.id)
     training_time = training_data_first.get('time').strftime("%H:%M")
     training_place = training_data_second.get('place')
     training_address = training_data_second.get('address')
     
     url = training_data_second.get('route')
     message = f'''
-<b>Запись прошла успешно!</b>
+<b>Запись прошла успешно! ✅</b>
 
 Ждём Вас сегодня в {training_time}.
 Адрес: {training_place}, {training_address}
@@ -520,7 +520,7 @@ async def declain(call: types.CallbackQuery):
     today = datetime.today().date()
     await dj.declain_training(date, call.from_user.id)
     await call.message.delete()
-    await call.message.answer('Тренировка отклонена. Ждём Вас в следующий раз!')
+    await call.message.answer('❌ Тренировка отклонена. Ждём Вас в следующий раз!')
 
 
 #оценка тренировки
@@ -533,3 +533,42 @@ async def get_rate(call: types.CallbackQuery, state: FSMContext):
     await dj.set_rate(rate, training_id)
     await call.message.answer('Спасибо за оценку!')
 
+
+
+
+#запись на игру
+@dp.callback_query_handler(lambda call: call.data.startswith('accept_game_button'))
+async def first_accept(call: types.CallbackQuery):
+    await call.message.delete()
+    game_id = call.data.split('_')[3]
+    game_data = await dj.get_game_data_for_accept(game_id, call.from_user.id)
+
+    now = datetime.now().replace(microsecond=0)
+    game_datetime = game_data.get('datetime')
+    if now >= game_datetime:
+        await call.message.delete()
+        await call.message.answer('Запись на игру окончена. Обратитесь к тренеру.')
+        return
+    
+    await dj.accept_game(game_id, call.from_user.id)
+    
+    url = game_data.get('route')
+    address = game_data.get('address')
+    place = game_data.get('place')
+    game_datetime = game_datetime.strftime("%d.%m.%Y %H:%M")
+    message = f'''
+<b>Запись прошла успешно! ✅</b>
+
+<b>{game_datetime}</b> - ждём Вас на игру.
+Адрес: {place}, {address}
+
+<a href="{url}">Построить маршрут</a>'''
+    await call.message.answer(message, disable_web_page_preview=True)
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('declain_game_button'))
+async def declain(call: types.CallbackQuery):
+    game_id = call.data.split('_')[3]
+    await dj.declain_game(game_id, call.from_user.id)
+    await call.message.delete()
+    await call.message.answer('❌ Игра отклонена. Ждём Вас в следующий раз!')

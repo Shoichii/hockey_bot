@@ -64,24 +64,32 @@ async def rate_notification(user, training_id):
     except Exception as e:
         print(e)
 
-async def game_notification(user, game):
+async def game_notification(user, game, was_call=False):
     date = game.date_time.strftime("%d.%m.%Y") 
     time = game.date_time.strftime("%H:%M")
     name = user.get('name')
     place = game.place
     address = game.address
     url = game.route
+    if was_call:
+        when = ''
+    else:
+        when = 'Завтра '
     message = f'''
 Уважаемый, {name}
 
-<b>Завтра {date} в {time} состоится игра.</b>
+<b>{when}{date} в {time} состоится игра.</b>
 Место: {place}
 Адрес: {address}
 <a href="{url}">Построить маршрут</a>
 '''
     id = user.get('id')
+    game_id = game.id
+    second_accept_button = types.InlineKeyboardButton('Пойду', callback_data=f'accept_game_button_{game_id}')
+    declain_button = types.InlineKeyboardButton('Не пойду', callback_data=f'declain_game_button_{game_id}')
+    keyboard = types.InlineKeyboardMarkup().row(declain_button, second_accept_button)
     try:
-        await bot.send_message(disable_web_page_preview=True, chat_id=id, text=message)
+        await bot.send_message(disable_web_page_preview=True, chat_id=id, text=message, reply_markup=keyboard)
         await dj.make_game_entry(game.date_time, user.get('telegram_id'))
     except Exception as e:
         print(e)
@@ -161,8 +169,8 @@ async def game_checker():
 
 
 async def scheduler():
-    aioschedule.every(30).seconds.do(training_checker)
-    aioschedule.every(30).seconds.do(game_checker)
+    aioschedule.every(5).seconds.do(training_checker)
+    aioschedule.every(5).seconds.do(game_checker)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)

@@ -49,3 +49,9 @@ class TeamAdmin(admin.ModelAdmin):
 class GameAdmin(admin.ModelAdmin):
     list_display = ('place', 'address', 'team', 'date_time')
     list_filter = ('place', 'address', 'team', 'date_time')
+
+
+@admin.register(md.GameJournal)
+class GameJournalAdmin(admin.ModelAdmin):
+    list_display = ('game', 'user', 'accept', 'answer_time', 'date_time')
+    list_filter = ('game', 'user', 'accept', 'answer_time', 'date_time')
