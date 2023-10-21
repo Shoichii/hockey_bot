@@ -11,7 +11,7 @@ from bot.dialogue_utils import (send_dialogue_message,
                                 send_dialogue_message_with_media)
 from bot.loader import dp, bot
 from bot.states import Adm_State, Dialogue_State, StartState, CahngeProfileState
-from bot.utils import user_notification
+from bot.utils import user_notification, game_notification
 
 
 async def main_menu_message(msg):
@@ -114,6 +114,35 @@ async def get_user_profile(msg):
     change_birthday_button = types.InlineKeyboardButton('День рождения', callback_data='change_button_birthday')
     keyboard = types.InlineKeyboardMarkup().row(change_name_button, change_phone_button).add(change_birthday_button)
     await msg.answer(message, reply_markup=keyboard)
+
+@dp.message_handler(commands=['games'])
+async def game_info(msg: types.Message):
+    if msg.from_user.id == ADM_ID:
+        await msg.answer('Эта команда для игроков')
+        return
+    games_data = await dj.check_games(msg.from_user.id)
+    if not games_data:
+        await msg.answer('На данный момент нет игр для записи.')
+        return
+    message = 'Выберите игру:\n\n'
+    count = 1
+    keyboard = types.InlineKeyboardMarkup()
+    for game in games_data:
+        data_time = game.date_time.strftime('%d.%m.%Y %H:%M')
+        game_info = f'{count}) {game.place} {game.address} {data_time}\n'
+        message += game_info
+        button = types.InlineKeyboardButton(f'{count}) {game.place}', callback_data=f'select_game_{game.id}')
+        keyboard.add(button)
+        count += 1
+    await msg.answer(message, reply_markup=keyboard)
+
+@dp.callback_query_handler(lambda call: call.data.startswith('select_game'))
+async def select_game(call: types.CallbackQuery):
+    await call.message.delete()
+    game_id = call.data.split('_')[2]
+    game_data = await dj.get_game_data(game_id, call.from_user.id)
+    await game_notification(game_data.get('user'), game_data.get('game'), was_call=True)
+
 
 @dp.message_handler(commands=['my_profile'])
 async def get_training_info(msg: types.Message):

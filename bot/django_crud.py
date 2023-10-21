@@ -496,7 +496,7 @@ def get_msg_id_for_reply(reply_msg_id):
 @sync_to_async()
 def get_games():
     now = datetime.now()
-    dif = timedelta(hours=24)
+    dif = timedelta(seconds=24 * 60 * 60)
     games = mdl.Game.objects.filter().all()
     if not games:
         return None
@@ -568,3 +568,38 @@ def declain_game(game_id, user_telegram_id):
     journal_entry = mdl.GameJournal.objects.filter(game=game, user=user).first()
     journal_entry.accept = False
     journal_entry.save()
+
+@sync_to_async()
+def check_games(user_telegram_id):
+    now = datetime.now()
+    dif = timedelta(seconds=24 * 60 * 60)
+    user = mdl.User.objects.filter(telegram_id=user_telegram_id).first()
+    teams = mdl.Team.objects.filter(users=user).all()
+    games = mdl.Game.objects.filter(team__in=teams).all()
+    if not games:
+        return None
+    games_data = []
+    for game in games:
+        if game.date_time - now <= dif and game.date_time > now:
+            journal_entry = mdl.GameJournal.objects.filter(user=user,date_time=game.date_time).first()
+            if journal_entry:
+                games_data.append(game)
+    if len(games_data) == 0:
+        return None
+    return games_data
+
+@sync_to_async()
+def get_game_data(game_id, user_telegram_id):
+    now = datetime.now()
+    dif = timedelta(seconds=24 * 60 * 60)
+    user = mdl.User.objects.filter(telegram_id=user_telegram_id).first()
+    game = mdl.Game.objects.filter(id=game_id).first()
+    if game.date_time - now <= dif and game.date_time > now:
+        user = {
+            'id': user.telegram_id,
+            'name': user.name
+        }
+        return {
+            'game': game,
+            'user': user
+        }
