@@ -141,6 +141,9 @@ async def select_game(call: types.CallbackQuery):
     await call.message.delete()
     game_id = call.data.split('_')[2]
     game_data = await dj.get_game_data(game_id, call.from_user.id)
+    if not game_data:
+        await call.message.answer('Кажется, запись на игру завершена.')
+        return
     await game_notification(game_data.get('user'), game_data.get('game'), was_call=True)
 
 
@@ -575,7 +578,6 @@ async def first_accept(call: types.CallbackQuery):
     now = datetime.now().replace(microsecond=0)
     game_datetime = game_data.get('datetime')
     if now >= game_datetime:
-        await call.message.delete()
         await call.message.answer('Запись на игру окончена. Обратитесь к тренеру.')
         return
     

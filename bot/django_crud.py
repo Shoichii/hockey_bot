@@ -558,6 +558,8 @@ def accept_game(game_id, user_telegram_id):
     game = mdl.Game.objects.filter(id=game_id).first()
     user = mdl.User.objects.filter(telegram_id=user_telegram_id).first()
     journal_entry = mdl.GameJournal.objects.filter(game=game, user=user).first()
+    journal_entry.answer_time = datetime.now()
+    journal_entry.previuos_answer = journal_entry.accept
     journal_entry.accept = True
     journal_entry.save()
 
@@ -566,6 +568,8 @@ def declain_game(game_id, user_telegram_id):
     game = mdl.Game.objects.filter(id=game_id).first()
     user = mdl.User.objects.filter(telegram_id=user_telegram_id).first()
     journal_entry = mdl.GameJournal.objects.filter(game=game, user=user).first()
+    journal_entry.answer_time = datetime.now()
+    journal_entry.previuos_answer = journal_entry.accept
     journal_entry.accept = False
     journal_entry.save()
 
