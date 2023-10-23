@@ -62,7 +62,7 @@ class Rate(models.Model):
     date = models.DateField(verbose_name='Дата')
     place = models.CharField(max_length=100, verbose_name='Место')
     address = models.CharField(max_length=150, verbose_name='Адрес проведения')
-    rate = models.FloatField(blank=True, null=True, verbose_name='Оценка от новичков')
+    rate = models.FloatField(blank=True, null=True, verbose_name='Оценка')
 
     class Meta:
         verbose_name = 'Оценка Тренировки'

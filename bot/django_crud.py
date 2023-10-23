@@ -502,7 +502,7 @@ def get_games():
         return None
     games_data = []
     for game in games:
-        if game.date_time - now <= dif:
+        if game.date_time - now <= dif and game.date_time > now:
             journal_entry = mdl.GameJournal.objects.filter(date_time=game.date_time).first()
             if not journal_entry:
                 games_data.append(game)
@@ -558,20 +558,27 @@ def accept_game(game_id, user_telegram_id):
     game = mdl.Game.objects.filter(id=game_id).first()
     user = mdl.User.objects.filter(telegram_id=user_telegram_id).first()
     journal_entry = mdl.GameJournal.objects.filter(game=game, user=user).first()
+    if not journal_entry:
+        return None
     journal_entry.answer_time = datetime.now()
     journal_entry.previuos_answer = journal_entry.accept
     journal_entry.accept = True
     journal_entry.save()
+    return True
 
 @sync_to_async()
 def declain_game(game_id, user_telegram_id):
     game = mdl.Game.objects.filter(id=game_id).first()
     user = mdl.User.objects.filter(telegram_id=user_telegram_id).first()
     journal_entry = mdl.GameJournal.objects.filter(game=game, user=user).first()
+    if not journal_entry:
+        return None
     journal_entry.answer_time = datetime.now()
     journal_entry.previuos_answer = journal_entry.accept
     journal_entry.accept = False
     journal_entry.save()
+    return True
+
 
 @sync_to_async()
 def check_games(user_telegram_id):
@@ -590,6 +597,7 @@ def check_games(user_telegram_id):
                 games_data.append(game)
     if len(games_data) == 0:
         return None
+    print(games_data)
     return games_data
 
 @sync_to_async()
@@ -607,3 +615,50 @@ def get_game_data(game_id, user_telegram_id):
             'game': game,
             'user': user
         }
+
+
+@sync_to_async()
+def check_games_admin():
+    now = datetime.now()
+    dif = timedelta(seconds=24 * 60 * 60)
+    dif2 = timedelta(seconds=2 * 60 * 60)
+    games = mdl.Game.objects.all()
+    if not games:
+        return None
+    games_data = []
+    for game in games:
+        if game.date_time - now <= dif and now - game.date_time <= dif2:
+            games_data.append({
+                'id': game.id,
+                'place': game.place,
+                'team': game.team.name,
+                'date_time': game.date_time
+            })
+    if len(games_data) == 0:
+        return None
+    
+    return games_data
+
+@sync_to_async()
+def get_game_users_admin(game_id):
+    game = mdl.Game.objects.filter(id=game_id).first()
+    users_data = []
+    for user in game.team.users.all():
+        journal_entry = mdl.GameJournal.objects.filter(game=game, user=user).first()
+        if journal_entry:
+            if not journal_entry.accept and journal_entry.previuos_answer:
+                changed = True
+            else:
+                changed = False
+            users_data.append({
+                'id': user.telegram_id,
+                'name': user.name,
+                'newbie': user.newbie,
+                'birthday': user.birthday,
+                'changed': changed,
+                'team': game.team.name,
+                'game': game
+            })
+    if len(users_data) == 0:
+        return None
+    return users_data

@@ -29,12 +29,13 @@ async def main_menu_message(msg):
 @dp.message_handler(commands=['start'])
 async def start(msg: types.Message):
     if msg.from_user.id == ADM_ID:
-        button_1 = types.KeyboardButton('Уже записались 🏒')
+        button_1 = types.KeyboardButton('Запись на тренировку 🏒')
         button_2 = types.KeyboardButton('Оценки тренировок 📊')
         button_3 = types.KeyboardButton('Рупор 📢')
+        button_4 = types.KeyboardButton('Запись на игру 🎮')
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        keyboard.row(button_3)
-        keyboard.row(button_2, button_1)
+        keyboard.row(button_4, button_1)
+        keyboard.row(button_3, button_2)
         await msg.answer('Добро пожаловать! Админ-мод включен.', reply_markup=keyboard)
     else:
         tg_id = await dj.check_new_user(msg.from_user.id)
@@ -218,7 +219,7 @@ def split_message(message, max_length=4096):
     """Разбивает сообщение на части, не превышающие max_length символов."""
     return [message[i:i+max_length] for i in range(0, len(message), max_length)]
 
-async def show_users(msg):
+async def show_users_training(msg):
     users_data = await dj.get_accept_users()
     if not users_data:
         await msg.answer('Ещё никто не записался')
@@ -239,10 +240,60 @@ async def show_users(msg):
         newbie = user.get('newbie')
         if user.get('changed'):
             counter2 += 1
-            message2 += f'{counter2}) {name} {birthday} {newbie}\n'
+            message2 += f'❌ {counter2}) {name} {birthday} {newbie}\n'
         else:
             counter1 += 1
-            message1 += f'{counter1}) {name} {birthday} {newbie}\n'
+            message1 += f'✅ {counter1}) {name} {birthday} {newbie}\n'
+
+
+    message = message1 + message2
+    try:
+        await msg.answer(message)
+    except Exception as e:
+        if str(e) == 'Message is too long':
+            parts = split_message(message, max_length=4096)
+            for part in parts:
+                await msg.answer(part)
+
+async def show_users_game(users_data, msg):
+    if not users_data:
+        await msg.answer('Ещё никто не записался')
+        return
+    team = users_data[0].get('team')
+    game = users_data[0].get('game')
+    game_date_time = game.date_time.strftime('%d.%m.%Y %H:%M')
+    message1 = f'''Команда: {team}
+Игра: {game.place} {game.address} {game_date_time}
+Уже записались:
+    
+'''
+    message2 = '''
+
+Передумали и отказались:
+
+'''
+    counter1 = 0
+    counter2 = 0
+    for user in users_data:
+        name = user.get('name')
+        user_birthday = user.get('birthday').strftime("%d.%m")
+        now = datetime.now()
+        then = now + timedelta(days = 1)
+        birthday = ''
+        if user_birthday == now.strftime("%d.%m"):
+            birthday = '(Сегодня день рождения🥳)'
+        if user_birthday == then.strftime("%d.%m"):
+            birthday = '(Завтра день рождения🥳)'
+        if user.get('newbie'):
+            newbie = 'Новичок'
+        else:
+            newbie = ''
+        if user.get('changed'):
+            counter2 += 1
+            message2 += f'❌ {counter2}) {name} {birthday} {newbie}\n'
+        else:
+            counter1 += 1
+            message1 += f'✅ {counter1}) {name} {birthday} {newbie}\n'
 
 
     message = message1 + message2
@@ -267,13 +318,41 @@ async def dialog_handler(msg: types.Message):
             yesterday_training_button = types.InlineKeyboardButton('Вчерашняя', callback_data='yesterday_training_button')
             keyboard = types.InlineKeyboardMarkup().row(select_date_button, yesterday_training_button)
             await msg.answer(message, reply_markup=keyboard)
-        elif msg.text == 'Уже записались 🏒':
-            await show_users(msg)
+        elif msg.text == 'Запись на тренировку 🏒':
+            await show_users_training(msg)
+        elif msg.text == 'Запись на игру 🎮':
+            games_data = await dj.check_games_admin()
+            if not games_data:
+                await msg.answer('Игры ещё не объявлены')
+                return
+            
+            message = 'Выберите игру\n\n'
+            count = 1
+            keyboard = types.InlineKeyboardMarkup()
+            for game in games_data:
+                date_time = game.get('date_time')
+                place = game.get('place')
+                team = game.get('team')
+                id = game.get('id')
+                data_time = date_time.strftime('%d.%m.%Y %H:%M')
+                message += f'{count}) {place} {team} {data_time}\n'
+                button = types.InlineKeyboardButton(f'{count}) {place}', callback_data=f'admin_select_game_{id}')
+                keyboard.add(button)
+                count += 1
+            await msg.answer(message, reply_markup=keyboard)
         elif msg.text == 'Рупор 📢':
             await msg.answer('Напишите сообщения для всех игроков. (Сообщение может содержать текст и одну картинку)')
             await Adm_State.megaphone.set()
         else:
             await send_dialogue_message(msg)
+
+@dp.callback_query_handler(lambda call: call.data.startswith('admin_select_game'))
+async def select_game_admin(call: types.CallbackQuery):
+    await call.message.delete()
+    game_id = call.data.split('_')[3]
+    users_data = await dj.get_game_users_admin(game_id)
+    await show_users_game(users_data, call.message)
+
 
 @dp.message_handler(state=Adm_State.megaphone, content_types=['text', 'photo'])
 async def save_message_to_state(msg: types.Message, state: FSMContext):
@@ -581,7 +660,10 @@ async def first_accept(call: types.CallbackQuery):
         await call.message.answer('Запись на игру окончена. Обратитесь к тренеру.')
         return
     
-    await dj.accept_game(game_id, call.from_user.id)
+    is_accept = await dj.accept_game(game_id, call.from_user.id)
+    if not is_accept:
+        await call.message.answer('Пока игр нет')
+        return
     
     url = game_data.get('route')
     address = game_data.get('address')
@@ -600,6 +682,9 @@ async def first_accept(call: types.CallbackQuery):
 @dp.callback_query_handler(lambda call: call.data.startswith('declain_game_button'))
 async def declain(call: types.CallbackQuery):
     game_id = call.data.split('_')[3]
-    await dj.declain_game(game_id, call.from_user.id)
+    is_accept = await dj.declain_game(game_id, call.from_user.id)
+    if not is_accept:
+        await call.message.answer('Пока игр нет')
+        return
     await call.message.delete()
     await call.message.answer('❌ Игра отклонена. Ждём Вас в следующий раз!')

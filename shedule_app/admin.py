@@ -1,6 +1,8 @@
 from django.contrib import admin
 from shedule_app import models as md
 from shedule_app.forms import UserAdminForm
+from django.db.models import QuerySet
+from datetime import datetime
 
 # Register your models here.
 
@@ -49,6 +51,19 @@ class TeamAdmin(admin.ModelAdmin):
 class GameAdmin(admin.ModelAdmin):
     list_display = ('place', 'address', 'team', 'date_time')
     list_filter = ('place', 'address', 'team', 'date_time')
+    actions = ['copy_game']
+
+    @admin.action(description='Сделать копию игры')
+    def copy_game(self, request, queryset: QuerySet):
+        game = queryset.first()
+        new_game = md.Game.objects.create(
+                place=game.place,
+                address=game.address,
+                team=game.team,
+                date_time=datetime.strptime('1970-01-01 00:00:00', '%Y-%m-%d %H:%M:%S')
+            )
+        new_game.save()
+
 
 
 @admin.register(md.GameJournal)
