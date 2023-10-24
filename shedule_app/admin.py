@@ -60,6 +60,7 @@ class GameAdmin(admin.ModelAdmin):
                 place=game.place,
                 address=game.address,
                 team=game.team,
+                route=game.route,
                 date_time=datetime.strptime('1970-01-01 00:00:00', '%Y-%m-%d %H:%M:%S')
             )
         new_game.save()
