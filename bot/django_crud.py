@@ -653,7 +653,7 @@ def get_game_users_admin(game_id):
                 changed = True
             else:
                 changed = False
-            if journal_entry.answer_time is not None:
+            if journal_entry.accept or (not journal_entry.accept and journal_entry.previuos_answer):
                 users_data.append({
                     'id': user.telegram_id,
                     'name': user.name,
