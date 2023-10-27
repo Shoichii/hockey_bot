@@ -2,6 +2,8 @@ from asgiref.sync import sync_to_async
 from shedule_app import models as mdl
 from datetime import datetime, timedelta
 from bot.config import DAYS
+import logging
+
 
 @sync_to_async()
 def check_new_user(user_id):
@@ -629,6 +631,7 @@ def check_games_admin():
     for game in games:
         game_date = game.date_time.date()
         current_date = now.date()
+        logging.debug(game_date == current_date)
         if game.date_time - now <= dif or game_date == current_date:
             games_data.append({
                 'id': game.id,
