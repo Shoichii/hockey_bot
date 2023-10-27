@@ -335,7 +335,7 @@ async def dialog_handler(msg: types.Message):
                 team = game.get('team')
                 id = game.get('id')
                 data_time = date_time.strftime('%d.%m.%Y %H:%M')
-                message += f'{count}) {place} {team} {data_time}\n'
+                message += f'{count}) {place} {team} {data_time} {id}\n'
                 button = types.InlineKeyboardButton(f'{count}) {place}', callback_data=f'admin_select_game_{id}')
                 keyboard.add(button)
                 count += 1
