@@ -6,7 +6,7 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 
 from bot import django_crud as dj
-from bot.config import ADM_ID
+from bot.config import ADM_ID, DEV_ID
 from bot.dialogue_utils import (send_dialogue_message,
                                 send_dialogue_message_with_media)
 from bot.loader import dp, bot
@@ -309,7 +309,7 @@ async def show_users_game(users_data, msg):
                     content_types=['text', 'audio', 'document', 'sticker', 'photo', 
                                 'video', 'voice', 'contact', 'location'])
 async def dialog_handler(msg: types.Message):
-    if msg.from_user.id == ADM_ID:
+    if msg.from_user.id == ADM_ID or msg.from_user.id == DEV_ID:
         if msg.text == 'Оценки тренировок 📊':
             message = '''
 Какую тренировку хотите посмотреть?

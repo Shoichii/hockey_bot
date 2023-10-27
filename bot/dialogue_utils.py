@@ -1,7 +1,7 @@
 from bot.loader import bot
 from aiogram import types
 from bot import django_crud as dj
-from bot.config import ADM_ID
+from bot.config import ADM_ID, DEV_ID
 
 
 
