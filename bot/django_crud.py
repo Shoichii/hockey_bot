@@ -653,15 +653,16 @@ def get_game_users_admin(game_id):
                 changed = True
             else:
                 changed = False
-            users_data.append({
-                'id': user.telegram_id,
-                'name': user.name,
-                'newbie': user.newbie,
-                'birthday': user.birthday,
-                'changed': changed,
-                'team': game.team.name,
-                'game': game
-            })
+            if journal_entry.accept is not None:
+                users_data.append({
+                    'id': user.telegram_id,
+                    'name': user.name,
+                    'newbie': user.newbie,
+                    'birthday': user.birthday,
+                    'changed': changed,
+                    'team': game.team.name,
+                    'game': game
+                })
     if len(users_data) == 0:
         return None
     return users_data
