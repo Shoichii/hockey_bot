@@ -629,7 +629,8 @@ def check_games_admin():
     for game in games:
         game_date = game.date_time.date()
         current_date = now.date()
-        if (0 < game.date_time - now <= dif) or game_date == current_date:
+        time_difference = game.date_time - now
+        if (time_difference <= dif and time_difference.total_seconds() >= 0) or game_date == current_date:
             games_data.append({
                 'id': game.id,
                 'place': game.place,
