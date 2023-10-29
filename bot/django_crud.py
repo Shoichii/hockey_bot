@@ -2,6 +2,7 @@ from asgiref.sync import sync_to_async
 from shedule_app import models as mdl
 from datetime import datetime, timedelta
 from bot.config import DAYS
+import logging
 
 @sync_to_async()
 def check_new_user(user_id):
@@ -513,6 +514,7 @@ def get_games():
 @sync_to_async()
 def get_users_game_notfn(date_time):
     game = mdl.Game.objects.filter(date_time=date_time).first()
+    logging.debug(game)
     users_data = []
     for user in game.team.users.all():
         journal_entry = mdl.GameJournal.objects.filter(date_time=date_time, user=user).first()
@@ -530,15 +532,15 @@ def get_users_game_notfn(date_time):
 @sync_to_async()
 def make_game_entry(date_time, user_id):
     game = mdl.Game.objects.filter(date_time=date_time).first()
-    for user in game.team.users.all():
-        journal_entry = mdl.GameJournal.objects.filter(date_time=date_time, user=user).first()
-        if not journal_entry:
-            new_entry = mdl.GameJournal.objects.create(
-                    game = game,
-                    user = user,
-                    date_time = date_time
-                )
-            new_entry.save()
+    user = mdl.User.objects.filter(telegram_id=user_id).first()
+    journal_entry = mdl.GameJournal.objects.filter(date_time=date_time, user=user).first()
+    if not journal_entry:
+        new_entry = mdl.GameJournal.objects.create(
+                game = game,
+                user = user,
+                date_time = date_time
+            )
+        new_entry.save()
 
 
 @sync_to_async()
