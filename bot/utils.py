@@ -65,6 +65,7 @@ async def rate_notification(user, training_id):
         print(e)
 
 async def game_notification(user, game, was_call=False):
+    print('2222222222222222222222222222222')
     date = game.date_time.strftime("%d.%m.%Y") 
     time = game.date_time.strftime("%H:%M")
     name = user.get('name')
