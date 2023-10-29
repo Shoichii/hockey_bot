@@ -498,11 +498,16 @@ def get_msg_id_for_reply(reply_msg_id):
 def get_games():
     now = datetime.now()
     dif = timedelta(seconds=24 * 60 * 60)
-    games = mdl.Game.objects.filter().all()
+    games = mdl.Game.objects.all()
     if not games:
         return None
     games_data = []
     for game in games:
+        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        print('Условие игр')
+        print(game.date_time - now <= dif)
+        print(game.date_time > now)
+        print(game.date_time - now <= dif and game.date_time > now)
         if game.date_time - now <= dif and game.date_time > now:
             journal_entry = mdl.GameJournal.objects.filter(date_time=game.date_time).first()
             if not journal_entry:
