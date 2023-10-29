@@ -65,7 +65,6 @@ async def rate_notification(user, training_id):
         print(e)
 
 async def game_notification(user, game, was_call=False):
-    print('2222222222222222222222222222222')
     date = game.date_time.strftime("%d.%m.%Y") 
     time = game.date_time.strftime("%H:%M")
     name = user.get('name')
@@ -89,6 +88,7 @@ async def game_notification(user, game, was_call=False):
     second_accept_button = types.InlineKeyboardButton('Пойду', callback_data=f'accept_game_button_{game_id}')
     declain_button = types.InlineKeyboardButton('Не пойду', callback_data=f'declain_game_button_{game_id}')
     keyboard = types.InlineKeyboardMarkup().row(declain_button, second_accept_button)
+    print('2222222222222222222222222222222')
     try:
         await bot.send_message(disable_web_page_preview=True, chat_id=id, text=message, reply_markup=keyboard)
         print('test')
