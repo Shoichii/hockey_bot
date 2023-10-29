@@ -505,6 +505,7 @@ def get_games():
     for game in games:
         print('!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         print('Условие игр')
+        print(game.name)
         print(game.date_time - now <= dif)
         print(game.date_time > now)
         print(game.date_time - now <= dif and game.date_time > now)
