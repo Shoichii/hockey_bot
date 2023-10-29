@@ -56,5 +56,4 @@ class Command(BaseCommand):
                 if message.media_group_id and message.conf.get("is_last"):
                     del self.album_data[message.media_group_id]
         dp.middleware.setup(AlbumMiddleware())
-        if __name__ == '__main__':
-            executor.start_polling(dp, skip_updates=False, on_startup=on_startup)
+        executor.start_polling(dp, skip_updates=False, on_startup=on_startup)
