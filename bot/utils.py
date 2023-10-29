@@ -157,14 +157,15 @@ async def training_checker():
 
 async def game_checker():
     games_data = await dj.get_games()
-    await bot.send_message(chat_id=DEV_ID, text='test')
-    await bot.send_message(chat_id=DEV_ID, text=games_data)
     if not games_data:
         return
     for game in games_data:
+        await bot.send_message(chat_id=DEV_ID, text=f'ID игры: {game.id}')
         users_data = await dj.get_users_game_notfn(game.date_time)
         if users_data:
             for user in users_data:
+                name = user.get('name')
+                await bot.send_message(chat_id=DEV_ID, text=f'Имя игрока: {name}')
                 await game_notification(user, game)
 
 
