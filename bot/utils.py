@@ -157,6 +157,7 @@ async def training_checker():
 
 async def game_checker():
     games_data = await dj.get_games()
+    await bot.send_message(chat_id=DEV_ID, text='test')
     await bot.send_message(chat_id=DEV_ID, text=games_data)
     if not games_data:
         return
@@ -170,8 +171,8 @@ async def game_checker():
 
 
 async def scheduler():
-    aioschedule.every(30).seconds.do(training_checker)
-    aioschedule.every(30).seconds.do(game_checker)
+    aioschedule.every(5).seconds.do(training_checker)
+    aioschedule.every(5).seconds.do(game_checker)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
