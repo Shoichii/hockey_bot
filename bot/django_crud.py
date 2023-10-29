@@ -514,7 +514,6 @@ def get_games():
 @sync_to_async()
 def get_users_game_notfn(date_time):
     game = mdl.Game.objects.filter(date_time=date_time).first()
-    logging.debug(game)
     users_data = []
     for user in game.team.users.all():
         journal_entry = mdl.GameJournal.objects.filter(date_time=date_time, user=user).first()
