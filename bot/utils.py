@@ -169,8 +169,8 @@ async def game_checker():
 
 
 async def scheduler():
-    aioschedule.every(30).seconds.do(training_checker)
-    aioschedule.every(30).seconds.do(game_checker)
+    aioschedule.every(5).seconds.do(training_checker)
+    aioschedule.every(5).seconds.do(game_checker)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
