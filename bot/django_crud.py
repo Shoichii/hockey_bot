@@ -531,7 +531,7 @@ def make_game_entry(date_time, user_id):
     game = mdl.Game.objects.filter(date_time=date_time).first()
     user = mdl.User.objects.filter(telegram_id=user_id).first()
     print('!!!!!!!!!!!!!!!!')
-    print(user)
+    print(user.name)
     journal_entry = mdl.GameJournal.objects.filter(date_time=date_time, user=user).first()
     print(journal_entry)
     if not journal_entry:

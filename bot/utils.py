@@ -90,6 +90,7 @@ async def game_notification(user, game, was_call=False):
     keyboard = types.InlineKeyboardMarkup().row(declain_button, second_accept_button)
     try:
         await bot.send_message(disable_web_page_preview=True, chat_id=id, text=message, reply_markup=keyboard)
+        print('test')
         await dj.make_game_entry(game.date_time, user.get('telegram_id'))
     except Exception as e:
         print(e)
@@ -163,7 +164,6 @@ async def game_checker():
         users_data = await dj.get_users_game_notfn(game.date_time)
         if users_data:
             for user in users_data:
-                print(user)
                 await game_notification(user, game)
 
 
