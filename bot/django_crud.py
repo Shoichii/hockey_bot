@@ -503,16 +503,8 @@ def get_games():
         return None
     games_data = []
     for game in games:
-        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        print('Условие игр')
-        print(game)
-        print(game.date_time - now <= dif)
-        print(game.date_time > now)
-        print(game.date_time - now <= dif and game.date_time > now)
         if game.date_time - now <= dif and game.date_time > now:
-            journal_entry = mdl.GameJournal.objects.filter(date_time=game.date_time).first()
-            if not journal_entry:
-                games_data.append(game)
+            games_data.append(game)
     if len(games_data) == 0:
         return None
     return games_data
@@ -520,16 +512,8 @@ def get_games():
 @sync_to_async()
 def get_users_game_notfn(date_time):
     game = mdl.Game.objects.filter(date_time=date_time).first()
-    print('!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    print('Название игры ')
-    print(game.name)
-    print('ID игры: ')
-    print(game.id)
     users_data = []
     for user in game.team.users.all():
-        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        print('Имя игрока ')
-        print(user.name)
         journal_entry = mdl.GameJournal.objects.filter(date_time=date_time, user=user).first()
         if not journal_entry:
             telegram_id = user.telegram_id
