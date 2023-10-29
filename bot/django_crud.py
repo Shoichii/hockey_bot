@@ -596,7 +596,6 @@ def check_games(user_telegram_id):
                 games_data.append(game)
     if len(games_data) == 0:
         return None
-    print(games_data)
     return games_data
 
 @sync_to_async()
@@ -644,24 +643,23 @@ def check_games_admin():
 @sync_to_async()
 def get_game_users_admin(game_id):
     game = mdl.Game.objects.filter(id=game_id).first()
+    journal_entries = mdl.GameJournal.objects.filter(game=game).all()
     users_data = []
-    for user in game.team.users.all():
-        journal_entry = mdl.GameJournal.objects.filter(game=game, user=user).first()
-        if journal_entry:
-            if not journal_entry.accept and journal_entry.previuos_answer:
-                changed = True
-            else:
-                changed = False
-            if journal_entry.accept or (not journal_entry.accept and journal_entry.previuos_answer):
-                users_data.append({
-                    'id': user.telegram_id,
-                    'name': user.name,
-                    'newbie': user.newbie,
-                    'birthday': user.birthday,
-                    'changed': changed,
-                    'team': game.team.name,
-                    'game': game
-                })
+    for entry in journal_entries:
+        if not entry.accept and entry.previuos_answer:
+            changed = True
+        else:
+            changed = False
+        if entry.accept or (not entry.accept and entry.previuos_answer):
+            users_data.append({
+                'id': entry.user.telegram_id,
+                'name': entry.user.name,
+                'newbie': entry.user.newbie,
+                'birthday': entry.user.birthday,
+                'changed': changed,
+                'team': game.team.name,
+                'game': game
+            })
     if len(users_data) == 0:
         return None
     return users_data
