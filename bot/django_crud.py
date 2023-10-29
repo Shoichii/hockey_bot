@@ -522,9 +522,6 @@ def get_users_game_notfn(date_time):
                 'id': telegram_id,
                 'name': name
             })
-    print('!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    print('Игроки для оповщений')
-    print(users_data)
     if len(users_data) == 0:
         return None
     return users_data
@@ -534,6 +531,9 @@ def make_game_entry(date_time, user_id):
     game = mdl.Game.objects.filter(date_time=date_time).first()
     user = mdl.User.objects.filter(telegram_id=user_id).first()
     journal_entry = mdl.GameJournal.objects.filter(date_time=date_time, user=user).first()
+    print('!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    print('СОздание записи в журнале')
+    print(journal_entry)
     if not journal_entry:
         new_entry = mdl.GameJournal.objects.create(
                 game = game,

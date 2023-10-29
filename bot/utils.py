@@ -157,9 +157,6 @@ async def training_checker():
 
 async def game_checker():
     games_data = await dj.get_games()
-    print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    print('Игры: ')
-    print(games_data)
     if not games_data:
         return
     for game in games_data:
