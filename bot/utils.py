@@ -89,10 +89,10 @@ async def game_notification(user, game, was_call=False):
     declain_button = types.InlineKeyboardButton('Не пойду', callback_data=f'declain_game_button_{game_id}')
     keyboard = types.InlineKeyboardMarkup().row(declain_button, second_accept_button)
     print(name)
-    print(user.get('telegram_id'))
+    print(user.get('id'))
     try:
         await bot.send_message(disable_web_page_preview=True, chat_id=id, text=message, reply_markup=keyboard)
-        await dj.make_game_entry(game.date_time, user.get('telegram_id'))
+        await dj.make_game_entry(game.date_time, user.get('id'))
     except Exception as e:
         print(e)
 
