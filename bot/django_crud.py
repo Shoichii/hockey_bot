@@ -532,7 +532,9 @@ def make_game_entry(date_time, user_id):
     user = mdl.User.objects.filter(telegram_id=user_id).first()
     journal_entry = mdl.GameJournal.objects.filter(date_time=date_time, user=user).first()
     print('!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    print('СОздание записи в журнале')
+    print('Создание записи в журнале')
+    print(user.name)
+    print(date_time)
     print(journal_entry)
     if not journal_entry:
         new_entry = mdl.GameJournal.objects.create(
