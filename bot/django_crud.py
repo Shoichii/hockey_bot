@@ -658,8 +658,10 @@ def get_game_users_admin(game_id):
                 'birthday': entry.user.birthday,
                 'changed': changed,
                 'team': game.team.name,
-                'game': game
+                'game': game,
+                'answer_time': entry.answer_time
             })
     if len(users_data) == 0:
         return None
-    return users_data
+    sorted_users_data = sorted(users_data, key=lambda x: x['answer_time'])
+    return sorted_users_data
