@@ -4,7 +4,7 @@ import aioschedule
 from bot import django_crud as dj
 from bot.loader import bot
 from datetime import datetime, timedelta
-from bot.config import DEV_ID
+
 
 async def user_notification(user_data, training_data, when):
     alarm = ''
@@ -160,20 +160,17 @@ async def game_checker():
     if not games_data:
         return
     for game in games_data:
-        await bot.send_message(chat_id=DEV_ID, text=f'ID игры: {game.id}')
         users_data = await dj.get_users_game_notfn(game.date_time)
         if users_data:
             for user in users_data:
-                name = user.get('name')
-                await bot.send_message(chat_id=DEV_ID, text=f'Имя игрока: {name}')
                 await game_notification(user, game)
 
 
 
 
 async def scheduler():
-    aioschedule.every(5).seconds.do(training_checker)
-    aioschedule.every(5).seconds.do(game_checker)
+    aioschedule.every(30).seconds.do(training_checker)
+    aioschedule.every(30).seconds.do(game_checker)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
