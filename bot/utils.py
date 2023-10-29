@@ -161,10 +161,9 @@ async def game_checker():
         return
     for game in games_data:
         users_data = await dj.get_users_game_notfn(game.date_time)
-        print('!!!!!!!!!!!!!!!!!!!!')
-        print(users_data)
         if users_data:
             for user in users_data:
+                print(user)
                 await game_notification(user, game)
 
 
