@@ -83,6 +83,10 @@ async def cancel_dialogue(msg: types.Message, state: FSMContext):
 
 @dp.message_handler(commands=['training_today'])
 async def get_training_info(msg: types.Message):
+    user_data = await dj.check_new_user(msg.from_user.id)
+    if not user_data:
+        await msg.answer('Войдите в профиль или зарегистрируйтесь')
+        return
     if msg.from_user.id == ADM_ID:
         await msg.answer('Эта команда для игроков')
         return
@@ -118,6 +122,10 @@ async def get_user_profile(msg):
 
 @dp.message_handler(commands=['games'])
 async def game_info(msg: types.Message):
+    user_data = await dj.check_new_user(msg.from_user.id)
+    if not user_data:
+        await msg.answer('Войдите в профиль или зарегистрируйтесь')
+        return
     if msg.from_user.id == ADM_ID:
         await msg.answer('Эта команда для игроков')
         return
