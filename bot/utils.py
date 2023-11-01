@@ -33,13 +33,13 @@ async def user_notification(user_data, training_data, when):
 🏟Стадион: {place} 
 {address}
 
-Вы пойдёте на тренировку?
-Спасибо.
+Для записи нажмите ✅
+Для отказа нажмите ❌
 
 <a href="{url}">Построить маршрут</a>
 '''
-    second_accept_button = types.InlineKeyboardButton('Пойду', callback_data='accept_button')
-    declain_button = types.InlineKeyboardButton('Не пойду', callback_data='declain_button')
+    second_accept_button = types.InlineKeyboardButton('✅ Пойду', callback_data='accept_button')
+    declain_button = types.InlineKeyboardButton('❌ Не пойду', callback_data='declain_button')
     keyboard = types.InlineKeyboardMarkup().row(declain_button, second_accept_button)
     try:
         await bot.send_message(disable_web_page_preview=True, chat_id=user_data.get('id'), text=message, reply_markup=keyboard)
@@ -81,12 +81,16 @@ async def game_notification(user, game, was_call=False):
 <b>{when}{date} в {time} состоится игра.</b>
 Место: {place}
 Адрес: {address}
+
+Для записи нажмите ✅
+Для отказа нажмите ❌
+
 <a href="{url}">Построить маршрут</a>
 '''
     id = user.get('id')
     game_id = game.id
-    second_accept_button = types.InlineKeyboardButton('Пойду', callback_data=f'accept_game_button_{game_id}')
-    declain_button = types.InlineKeyboardButton('Не пойду', callback_data=f'declain_game_button_{game_id}')
+    second_accept_button = types.InlineKeyboardButton('✅ Пойду', callback_data=f'accept_game_button_{game_id}')
+    declain_button = types.InlineKeyboardButton('❌ Не пойду', callback_data=f'declain_game_button_{game_id}')
     keyboard = types.InlineKeyboardMarkup().row(declain_button, second_accept_button)
     try:
         await bot.send_message(disable_web_page_preview=True, chat_id=id, text=message, reply_markup=keyboard)
