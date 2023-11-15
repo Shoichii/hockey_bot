@@ -106,6 +106,9 @@ async def training_checker():
     yesterday_day = yesterday_day.strftime("%A").lower()
     # tomorrow_day = tomorrow_day.strftime("%A").lower()
     trainings = await dj.get_trainings([yesterday_day, today_day])
+    print(trainings)
+    print('1111111111111')
+    print(trainings.get('today'))
     if not trainings:
         return
     if trainings.get('yesterday'):
@@ -115,7 +118,6 @@ async def training_checker():
         for i,user in enumerate(not_data.get('users_data')):
             training_id = not_data.get('training_ids')[i]
             await rate_notification(user, training_id)
-    print(trainings.get('today'))
     if trainings.get('today'):
         current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
         # раскоментировать и создать файл time.txt для имитации текущего времени
