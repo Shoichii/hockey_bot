@@ -115,7 +115,7 @@ async def training_checker():
         for i,user in enumerate(not_data.get('users_data')):
             training_id = not_data.get('training_ids')[i]
             await rate_notification(user, training_id)
-        
+    print(trainings.get('today'))
     if trainings.get('today'):
         current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
         # раскоментировать и создать файл time.txt для имитации текущего времени
