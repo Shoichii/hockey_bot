@@ -344,8 +344,9 @@ def get_users_for_not_yesterday(day):
     formatted_yesterday = yesterday.strftime("%Y-%m-%d")
     #ищем эту тренировку среди всех записей в журнале
     journal_entries = mdl.Journal.objects.filter(training=training, date=formatted_yesterday).all()
-    logging.debug(journal_entries)
-    logging.debug(not journal_entries)
+    print('22222222222222222222')
+    print(journal_entries)
+    print(not journal_entries)
     if not journal_entries: return None
     #берём последнюю запись с этой тренировкой
     last_journal_entry = journal_entries[-1]

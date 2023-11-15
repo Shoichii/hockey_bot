@@ -106,9 +106,13 @@ async def training_checker():
     yesterday_day = yesterday_day.strftime("%A").lower()
     # tomorrow_day = tomorrow_day.strftime("%A").lower()
     trainings = await dj.get_trainings([yesterday_day, today_day])
+    print('0000000000000000000')
+    print(trainings)
     if not trainings:
         return
     if trainings.get('yesterday'):
+        print('11111111111')
+        print(trainings.get('yesterday').get('day'))
         not_data = await dj.get_users_for_not_yesterday(trainings.get('yesterday').get('day'))
         if not not_data:
                 return
