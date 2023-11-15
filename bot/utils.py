@@ -106,18 +106,14 @@ async def training_checker():
     yesterday_day = yesterday_day.strftime("%A").lower()
     # tomorrow_day = tomorrow_day.strftime("%A").lower()
     trainings = await dj.get_trainings([yesterday_day, today_day])
-    print(trainings)
-    print('1111111111111')
-    print(trainings.get('today'))
     if not trainings:
         return
     if trainings.get('yesterday'):
         not_data = await dj.get_users_for_not_yesterday(trainings.get('yesterday').get('day'))
-        if not not_data:
-                return
-        for i,user in enumerate(not_data.get('users_data')):
-            training_id = not_data.get('training_ids')[i]
-            await rate_notification(user, training_id)
+        if not_data:
+            for i,user in enumerate(not_data.get('users_data')):
+                training_id = not_data.get('training_ids')[i]
+                await rate_notification(user, training_id)
     if trainings.get('today'):
         print('000000000000000000000')
         current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
