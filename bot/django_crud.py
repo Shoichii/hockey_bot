@@ -338,11 +338,15 @@ def make_entry(user_telegram_id, training_data, newbie=False):
 def get_users_for_not_yesterday(day):
     #по дню определяем тренировку
     training = mdl.Training.objects.filter(day=day, was_end=False).first()
+    # Получаем текущую дату и вычитаем из нее один день
+    yesterday = datetime.now() - timedelta(days=1)
+    # Форматируем дату по вашим предпочтениям
+    formatted_yesterday = yesterday.strftime("%Y-%m-%d")
     #ищем эту тренировку среди всех записей в журнале
-    journal_entries = mdl.Journal.objects.filter(training=training).all()
+    journal_entries = mdl.Journal.objects.filter(training=training, date=formatted_yesterday).all()
     if not journal_entries: return None
     #берём последнюю запись с этой тренировкой
-    last_journal_entry = journal_entries[len(journal_entries)-1]
+    last_journal_entry = journal_entries[-1]
     #находим все записи с такой же датой и этой же тренировкой
     journal_entries = journal_entries.filter(date=last_journal_entry.date).all()
     users_data = []
