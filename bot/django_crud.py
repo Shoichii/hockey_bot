@@ -340,6 +340,7 @@ def get_users_for_not_yesterday(day):
     training = mdl.Training.objects.filter(day=day, was_end=False).first()
     #ищем эту тренировку среди всех записей в журнале
     journal_entries = mdl.Journal.objects.filter(training=training).all()
+    if not journal_entries: return None
     #берём последнюю запись с этой тренировкой
     last_journal_entry = journal_entries[len(journal_entries)-1]
     #находим все записи с такой же датой и этой же тренировкой
