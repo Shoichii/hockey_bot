@@ -32,8 +32,8 @@ class TrainingAdmin(admin.ModelAdmin):
 @admin.register(md.Journal)
 class JournalAdmin(admin.ModelAdmin):
     exclude = ('second_not', 'previuos_answer')
-    list_display = ('training', 'user', 'accept', 'answer_time', 'rate', 'date',)
-    list_filter = ('training', 'user', 'accept', 'answer_time', 'rate', 'date',)
+    list_display = ('training', 'user', 'accept', 'answer_time', 'rate', 'date_time',)
+    list_filter = ('training', 'user', 'accept', 'answer_time', 'rate', 'date_time',)
 
 
 @admin.register(md.Rate)

@@ -48,7 +48,7 @@ class Journal(models.Model):
     answer_time = models.DateTimeField(verbose_name='Время ответа', blank=True, null=True)
     previuos_answer = models.BooleanField(blank=True, null=True)
     second_not = models.BooleanField(default=False)
-    date = models.DateField(verbose_name='Дата тренировки', blank=True, null=True)
+    date_time = models.DateTimeField(verbose_name='Дата тренировки', blank=True, null=True)
     rate = models.IntegerField(blank=True, null=True, verbose_name='Оценка')
 
     class Meta:
@@ -122,3 +122,4 @@ class GameJournal(models.Model):
 
     def __str__(self):
         return str(self.game)
+

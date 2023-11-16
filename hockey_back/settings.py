@@ -87,7 +87,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'shedule_app'
+    'shedule_app.apps.SheduleAppConfig',
 ]
 
 MIDDLEWARE = [
