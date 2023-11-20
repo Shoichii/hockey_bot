@@ -73,10 +73,10 @@ def get_trainings(day):
 
 @sync_to_async()
 def get_trainings_for_rate(today_day, yesterday_day):
-    # для тестов
-    test_date_time = "2023-11-20 00:00:00"
-    now = datetime.strptime(test_date_time, "%Y-%m-%d %H:%M:%S")
-    #now = datetime.now()
+    # # для тестов
+    # test_date_time = "2023-11-20 00:00:00"
+    # now = datetime.strptime(test_date_time, "%Y-%m-%d %H:%M:%S")
+    now = datetime.now()
     trainings_today = mdl.Training.objects.filter(day=today_day).all()
     trainings_yesterday = mdl.Training.objects.filter(day=yesterday_day).all()
     if not trainings_today and not trainings_yesterday: return None
@@ -276,10 +276,10 @@ def get_users_for_second_not(day, time):
 
 @sync_to_async()
 def get_training_info(id=None):
-    # для тестов
-    test_date_time = "2023-11-17 08:00:00"
-    now = datetime.strptime(test_date_time, "%Y-%m-%d %H:%M:%S")
-    # now = datetime.now()
+    # # для тестов
+    # test_date_time = "2023-11-17 08:00:00"
+    # now = datetime.strptime(test_date_time, "%Y-%m-%d %H:%M:%S")
+    now = datetime.now()
     today = now.date()
     week_day = now.strftime("%A").lower()
     if id:

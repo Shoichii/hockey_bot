@@ -110,10 +110,10 @@ async def game_notification(user, game, was_call=False):
         pass
 
 async def training_checker():
-    # для тестов
-    test_date_time = "2023-11-20 00:00:00"
-    now = datetime.strptime(test_date_time, "%Y-%m-%d %H:%M:%S")
-    #now = datetime.now()
+    # # для тестов
+    # test_date_time = "2023-11-20 00:00:00"
+    # now = datetime.strptime(test_date_time, "%Y-%m-%d %H:%M:%S")
+    now = datetime.now()
     yesterday_day = now - timedelta(days=1)
     # tomorrow_day = now + timedelta(days=1)
     today_day = now.strftime("%A").lower()
@@ -130,9 +130,10 @@ async def training_checker():
                 training_id = not_data.get('training_ids')[i]
                 await rate_notification(user, training_id)
     if today_trainings:
-        test_time = "09:00:00"
-        current_time = datetime.strptime(test_time, '%H:%M:%S').time()
-        # current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
+        # # для тестов
+        # test_time = "09:00:00"
+        # current_time = datetime.strptime(test_time, '%H:%M:%S').time()
+        current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
         current_hours = int(current_time.hour)
         today_trainings.reverse()
         for training in today_trainings:
