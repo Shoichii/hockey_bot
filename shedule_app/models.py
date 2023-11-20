@@ -56,10 +56,10 @@ class Journal(models.Model):
         verbose_name_plural = 'Журнал тренировок'
 
     def __str__(self):
-        return str(self.date)
+        return str(self.date_time)
     
 class Rate(models.Model):
-    date = models.DateField(verbose_name='Дата')
+    date_time = models.DateTimeField(verbose_name='Дата и время', blank=True, null=True)
     place = models.CharField(max_length=100, verbose_name='Место')
     address = models.CharField(max_length=150, verbose_name='Адрес проведения')
     rate = models.FloatField(blank=True, null=True, verbose_name='Оценка')
@@ -69,7 +69,7 @@ class Rate(models.Model):
         verbose_name_plural = 'Оценки Тренировок'
 
     def __str__(self):
-        return str(self.date)
+        return str(self.date_time)
     
 
 class Message(models.Model):

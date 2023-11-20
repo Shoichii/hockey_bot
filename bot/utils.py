@@ -38,18 +38,28 @@ async def user_notification(user_data, training_data, when):
 
 <a href="{url}">Построить маршрут</a>
 '''
-    second_accept_button = types.InlineKeyboardButton('✅ Пойду', callback_data='accept_button')
-    declain_button = types.InlineKeyboardButton('❌ Не пойду', callback_data='declain_button')
+    
+    training_id = training_data.get('id')
+    second_accept_button = types.InlineKeyboardButton('✅ Пойду', callback_data=f'accept_button_{training_id}')
+    declain_button = types.InlineKeyboardButton('❌ Не пойду', callback_data=f'declain_button_{training_id}')
     keyboard = types.InlineKeyboardMarkup().row(declain_button, second_accept_button)
     try:
         await bot.send_message(disable_web_page_preview=True, chat_id=user_data.get('id'), text=message, reply_markup=keyboard)
         await dj.make_entry(user_data.get('id'), training_data, user_data.get('newbie'))
     except Exception as e:
-        print(e)
+        # print(e)
+        pass
 
 async def rate_notification(user, training_id):
-    message = '''
+    training_time = user.get('training_time').strftime('%H:%M')
+    training_place = user.get('training_place')
+    training_address = user.get('training_address')
+    message = f'''
 Оцените пожалуйста тренировку.
+
+🕖Лёд в {training_time}
+🏟Стадион: {training_place}
+{training_address}
 '''
     rate_button_1 = types.InlineKeyboardButton('1🌟', callback_data=f'rate_button_1_{training_id}')
     rate_button_2 = types.InlineKeyboardButton('2🌟', callback_data=f'rate_button_2_{training_id}')
@@ -96,69 +106,54 @@ async def game_notification(user, game, was_call=False):
         await bot.send_message(disable_web_page_preview=True, chat_id=id, text=message, reply_markup=keyboard)
         await dj.make_game_entry(game.date_time, user.get('id'))
     except Exception as e:
-        print(e)
+        # print(e)
+        pass
 
 async def training_checker():
-    now = datetime.now()
+    # для тестов
+    test_date_time = "2023-11-20 00:00:00"
+    now = datetime.strptime(test_date_time, "%Y-%m-%d %H:%M:%S")
+    #now = datetime.now()
     yesterday_day = now - timedelta(days=1)
     # tomorrow_day = now + timedelta(days=1)
     today_day = now.strftime("%A").lower()
     yesterday_day = yesterday_day.strftime("%A").lower()
     # tomorrow_day = tomorrow_day.strftime("%A").lower()
-    trainings = await dj.get_trainings([yesterday_day, today_day])
-    if not trainings:
+    today_trainings = await dj.get_trainings(today_day)
+    training_for_rate = await dj.get_trainings_for_rate(today_day, yesterday_day)
+    if not training_for_rate:
         return
-    if trainings.get('yesterday'):
-        not_data = await dj.get_users_for_not_yesterday(trainings.get('yesterday').get('day'))
+    for training in training_for_rate:
+        not_data = await dj.get_users_for_not_rate(training)
         if not_data:
             for i,user in enumerate(not_data.get('users_data')):
                 training_id = not_data.get('training_ids')[i]
                 await rate_notification(user, training_id)
-    if trainings.get('today'):
-        print('000000000000000000000')
-        current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
-        # раскоментировать и создать файл time.txt для имитации текущего времени
-        # в файл записать время в формате 09:00:00
-        # time_str = ''
-        # with open('Bot/time.txt', 'r') as file:
-        #     # Считываем первую строку файла
-        #     time_str = file.readline().strip()
-        # current_time = datetime.strptime(time_str, '%H:%M:%S').time()
+    if today_trainings:
+        test_time = "09:00:00"
+        current_time = datetime.strptime(test_time, '%H:%M:%S').time()
+        # current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
         current_hours = int(current_time.hour)
-        training_time = trainings.get('today').get('time')
-        training_hours = int(training_time.hour)
-        difference_hours = training_hours - current_hours
-        print('1111111111111111')
-        if 4 < difference_hours <= 13:
-            print('22222222222222222222222')
-            not_data = await dj.get_users_for_first_not(trainings.get('today').get('day'))
-            if not not_data:
-                return
-            users_data = not_data.get('users_data')
-            for user_data in users_data:
-                await user_notification(user_data, not_data.get('training_data'), 'today')
+        today_trainings.reverse()
+        for training in today_trainings:
+            training_time = training.get('time')
+            training_hours = int(training_time.hour)
+            difference_hours = training_hours - current_hours
+            if current_hours >= 9 and difference_hours > 4:
+                not_data = await dj.get_users_for_first_not(training.get('day'), training_time)
+                if not not_data:
+                    return
+                users_data = not_data.get('users_data')
+                for user_data in users_data:
+                    await user_notification(user_data, not_data.get('training_data'), 'today')
 
-        if 0 < difference_hours <= 4:
-            not_data = await dj.get_users_for_second_not(trainings.get('today').get('day'))
-            if not not_data:
-                return
-            users_data = not_data.get('users_data')
-            for user_data in users_data:
-                await user_notification(user_data, not_data.get('training_data'), 'today')
-    # if trainings.get('tomorrow'):
-    #     current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
-    #     current_hours = int(current_time.hour)
-    #     training_time = trainings.get('tomorrow').get('time')
-    #     training_hours = int(training_time.hour)
-        
-    #     difference_hours = training_hours - current_hours
-    #     if difference_hours <= 4:
-    #         not_data = await dj.get_users_for_not_tomorrow(trainings.get('tomorrow').get('day'))
-    #         if not not_data:
-    #             return
-    #         users_data = not_data.get('users_data')
-    #         for user_data in users_data:
-    #             await user_notification(user_data, not_data.get('training_data'), 'tomorrow')
+            if 0 < difference_hours <= 4:
+                not_data = await dj.get_users_for_second_not(training.get('day'), training_time)
+                if not not_data:
+                    return
+                users_data = not_data.get('users_data')
+                for user_data in users_data:
+                    await user_notification(user_data, not_data.get('training_data'), 'today')
 
 async def game_checker():
     games_data = await dj.get_games()

@@ -57,99 +57,83 @@ def add_new_user(name, phone_number, birthday, user_id):
     new_user.save()
 
 @sync_to_async()
-def get_trainings(days):
+def get_trainings(day):
     trainings = mdl.Training.objects.filter(was_end=False).all()
     if not trainings:
         return None
-    yesterday = trainings.filter(day=days[0]).first()
-    if yesterday:
-        yesterday_day = yesterday.day
-        yesterday_time = yesterday.time
-        yesterday = {
-            'day': yesterday_day,
-            'time': yesterday_time
-        }
-    today = trainings.filter(day=days[1]).first()
-    if today:
-        today_day = today.day
-        today_time = today.time
-        today = {
-            'day': today_day,
-            'time': today_time
-        }
-    # tomorrow = trainings.filter(day=days[2]).first()
-    # if tomorrow:
-    #     tomorrow_day = tomorrow.day
-    #     tomorrow_time = tomorrow.time
-    #     tomorrow = {
-    #         'day': tomorrow_day,
-    #         'time': tomorrow_time
-    #     }
-    return {
-        'yesterday': yesterday,
-        'today': today,
-    }
-
-# @sync_to_async()
-# def get_users_for_not_tomorrow(day):
-#     users = mdl.User.objects.filter(telegram_id__isnull=False).all()
-#     training = mdl.Training.objects.filter(day=day, was_end=False).first()
-#     today = datetime.now().date()
-#     tomorrow = today + timedelta(days = 1)
-#     formatted_date = tomorrow.strftime("%Y-%m-%d")
-#     users_data = []
-#     for user in users:
-#         journal_entry = mdl.Journal.objects.filter(user=user, date=formatted_date,).first()
-#         if not journal_entry:
-#             missed_trainings = mdl.Journal.objects.filter(user=user).all()[:6]
-#             missed_counter = 0
-#             for missed_training in missed_trainings:
-#                 if not missed_training.accept:
-#                     missed_counter += 1
-#                 else:
-#                     break
-#             truant = False
-#             if missed_counter >= 6:
-#                 truant = True
-#             new_journal_entry = mdl.Journal.objects.create(
-#                 training=training,
-#                 user = user,
-#                 date = formatted_date,
-#             )
-#             new_journal_entry.save()
-#             users_data.append({
-#                 'id': user.telegram_id,
-#                 'name': user.name,
-#                 'truant': truant,
-#             })
-#     if len(users_data) == 0:
-#         return None
-#     training_data = {
-#         'date': tomorrow,
-#         'time': training.time,
-#         'place': training.place,
-#         'address': training.address,
-#     }
-#     return {
-#         'users_data': users_data,
-#         'training_data': training_data
-#     }
+    todays = trainings.filter(day=day).all()
+    today_trainings = []
+    if todays:
+        for today in todays:
+            today_trainings.append({
+                'day': today.day,
+                'time': today.time
+            })
+    return today_trainings
 
 @sync_to_async()
-def get_training_data_for_accept(date,user_id):
-    user = mdl.User.objects.filter(telegram_id=user_id).first()
-    journal_entry = mdl.Journal.objects.filter(user=user, date=date).first()
-    training_data = {
-        'date': journal_entry.date,
-        'time': journal_entry.training.time,
-    }
-    return training_data
+def get_trainings_for_rate(today_day, yesterday_day):
+    # для тестов
+    test_date_time = "2023-11-20 00:00:00"
+    now = datetime.strptime(test_date_time, "%Y-%m-%d %H:%M:%S")
+    #now = datetime.now()
+    trainings_today = mdl.Training.objects.filter(day=today_day).all()
+    trainings_yesterday = mdl.Training.objects.filter(day=yesterday_day).all()
+    if not trainings_today and not trainings_yesterday: return None
+    today = now 
+    yesterday = now - timedelta(days=1)
+
+    trainings_for_rate = []
+
+    training_date = today.date()
+    for training in trainings_today:
+        training_time = training.time
+        date_time = datetime.combine(training_date, training_time)
+        entry = mdl.Journal.objects.filter(training=training, date_time=date_time).first()
+        if not entry: continue
+        time_difference_hours = (now - entry.date_time).total_seconds() // 3600
+        if entry and 2 <= int(time_difference_hours) <= 4:
+            trainings_for_rate.append({
+                'date': training_date,
+                'day': training.day,
+                'time': training.time
+            })
+
+    training_date = yesterday.date()
+    for training in trainings_yesterday:
+        training_time = training.time
+        date_time = datetime.combine(training_date, training_time)
+        entry = mdl.Journal.objects.filter(training=training, date_time=date_time).first()
+        if not entry: continue
+        time_difference_hours = (now - entry.date_time).total_seconds() // 3600
+        if entry and 2 <= int(time_difference_hours) <= 4:
+            trainings_for_rate.append({
+                'date': training_date,
+                'day': training.day,
+                'time': training.time
+            })
+    if not trainings_for_rate: return None
+    return trainings_for_rate
 
 
 @sync_to_async()
-def accept_training(date,user_id):
+def get_training_data_for_accept(date, training_id, user_id):
     user = mdl.User.objects.filter(telegram_id=user_id).first()
-    journal_entry = mdl.Journal.objects.filter(user=user, date=date).first()
+    training = mdl.Training.objects.filter(id=training_id).first()
+    training_time = training.time
+    date_time = datetime.combine(date, training_time)
+    journal_entry = mdl.Journal.objects.filter(user=user, date_time=date_time).first()
+    
+    return journal_entry.date_time
+
+
+@sync_to_async()
+def accept_training(date, training_id, user_id):
+    user = mdl.User.objects.filter(telegram_id=user_id).first()
+    training = mdl.Training.objects.filter(id=training_id).first()
+    training_time = training.time
+    date_time = datetime.combine(date, training_time)
+    journal_entry = mdl.Journal.objects.filter(user=user, date_time=date_time).first()
     
     journal_entry.previuos_answer = journal_entry.accept
     journal_entry.accept = True
@@ -157,9 +141,9 @@ def accept_training(date,user_id):
     journal_entry.answer_time = datetime.now()
     journal_entry.save()
 
+    date_time = date_time.strftime("%d.%m.%Y %H:%M")
     training_data = {
-        'date': journal_entry.date,
-        'time': journal_entry.training.time,
+        'date_time': date_time,
         'place': journal_entry.training.place,
         'address': journal_entry.training.address,
         'route': journal_entry.training.route
@@ -167,9 +151,12 @@ def accept_training(date,user_id):
     return training_data
 
 @sync_to_async()
-def declain_training(date,user_id):
+def declain_training(date, training_id, user_id):
     user = mdl.User.objects.filter(telegram_id=user_id).first()
-    journal_entry = mdl.Journal.objects.filter(user=user, date=date).first()
+    training = mdl.Training.objects.filter(id=training_id).first()
+    training_time = training.time
+    date_time = datetime.combine(date, training_time)
+    journal_entry = mdl.Journal.objects.filter(user=user, date_time=date_time).first()
     journal_entry.previuos_answer = journal_entry.accept
     journal_entry.accept = False
     journal_entry.second_not = True
@@ -177,19 +164,20 @@ def declain_training(date,user_id):
     journal_entry.save()
 
 @sync_to_async()
-def get_users_for_first_not(day):
+def get_users_for_first_not(day, training_time):
     now = datetime.now()
     current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
-    training = mdl.Training.objects.filter(day=day, was_end=False).first()
+    training = mdl.Training.objects.filter(day=day, time=training_time, was_end=False).first()
     if current_time >= training.time:
         return None
     
     users = mdl.User.objects.filter(telegram_id__isnull=False).all()
     today = now.date()
-    formatted_date = today.strftime("%Y-%m-%d")
+    time = training.time
+    date_time = datetime.combine(today, time)
     users_data = []
     for user in users:
-        user_trainings = mdl.Journal.objects.filter(user=user).all()
+        user_trainings = mdl.Journal.objects.filter(user=user).exclude(date_time__date=today).all()
         truant = False
         #если клиент первый раз воспользовался ботом, то у него него не будет записей тренировок
         #в журнале, поэтому проверяем. если тренировки есть
@@ -209,7 +197,7 @@ def get_users_for_first_not(day):
                     truant = True
             #далее смотрим есть ли у него запись на сегодняшнюю тренировку
             #если он останавливал бота и снова его запустил, то записи может и не быть
-            journal_entry = user_trainings.filter(date=formatted_date).first()
+            journal_entry = mdl.Journal.objects.filter(user=user, date_time=date_time).first()
             if not journal_entry:
                 #и добавляем пользователя в список для оповещения
                 users_data.append({
@@ -231,6 +219,7 @@ def get_users_for_first_not(day):
     if len(users_data) == 0:
         return None
     training_data = {
+        'id': training.id,
         'day': day,
         'date': today,
         'time': training.time,
@@ -244,16 +233,18 @@ def get_users_for_first_not(day):
     }
 
 @sync_to_async()
-def get_users_for_second_not(day):
+def get_users_for_second_not(day, time):
     now = datetime.now()
     today = now.date()
-    training = mdl.Training.objects.filter(day=day, was_end=False).first()
-    entries = mdl.Journal.objects.filter(date=today, accept=None, second_not=False).all()
+    training = mdl.Training.objects.filter(day=day, time=time, was_end=False).first()
+    time = training.time
+    date_time = datetime.combine(today, time)
+    entries = mdl.Journal.objects.filter(date_time=date_time, accept=None, second_not=False).all()
     
     users_data = []
     users = mdl.User.objects.filter(telegram_id__isnull=False).all()
     for user in users:
-        entry = mdl.Journal.objects.filter(date=today, user=user).first()
+        entry = mdl.Journal.objects.filter(date_time=date_time, user=user).first()
         if not entry:
             users_data.append({
                 'id': user.telegram_id,
@@ -270,6 +261,7 @@ def get_users_for_second_not(day):
                 'first_not': False
             })
     training_data = {
+        'id': training.id,
         'day': day,
         'date': today,
         'time': training.time,
@@ -283,41 +275,47 @@ def get_users_for_second_not(day):
     }
 
 @sync_to_async()
-def get_training_info():
-    # раскоментировать и создать файл time.txt для имитации текущего времени
-    # в файл записать время в формате 09:00:00
-    # time_str = ''
-    # with open('Bot/time.txt', 'r') as file:
-    #     # Считываем первую строку файла
-    #     time_str = file.readline().strip()
-    now = datetime.now()
+def get_training_info(id=None):
+    # для тестов
+    test_date_time = "2023-11-17 08:00:00"
+    now = datetime.strptime(test_date_time, "%Y-%m-%d %H:%M:%S")
+    # now = datetime.now()
     today = now.date()
     week_day = now.strftime("%A").lower()
-    training = mdl.Training.objects.filter(day=week_day, was_end=False).first()
-    if not training:
+    if id:
+        trainings = mdl.Training.objects.filter(id=id).all()
+    else:
+        trainings = mdl.Training.objects.filter(day=week_day, was_end=False).all()
+    if not trainings:
         return 'not today'
     current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
-    # current_time = datetime.strptime(time_str, '%H:%M:%S').time()
     current_hours = int(current_time.hour)
-    training_time = training.time
-    training_hours = int(training_time.hour)
-    if training_hours <= current_hours:
-        return None
-    training_data = {
-        'day': week_day,
-        'date': today,
-        'time': training.time,
-        'place': training.place,
-        'address': training.address,
-        'route': training.route,
-    }
-    return training_data
+    trainings_data = []
+    for training in trainings:
+        training_time = training.time
+        training_hours = int(training_time.hour)
+        if training_hours <= current_hours:
+            return None
+        trainings_data.append({
+            'id': training.id,
+            'date': today,
+            'day': training.day,
+            'time': training.time,
+            'place': training.place,
+            'address': training.address,
+        })
+    return trainings_data
+
 
 @sync_to_async()
 def make_entry(user_telegram_id, training_data, newbie=False):
     user = mdl.User.objects.filter(telegram_id=user_telegram_id).first()
-    training = mdl.Training.objects.filter(day=training_data.get('day')).first()
-    entry = mdl.Journal.objects.filter(user=user, date=training_data.get('date')).first()
+    training_day = training_data.get('day')
+    training_date = training_data.get('date')
+    training_time = training_data.get('time')
+    training = mdl.Training.objects.filter(day=training_day, time=training_time).first()
+    date_time = datetime.combine(training_date, training_time)
+    entry = mdl.Journal.objects.filter(user=user, date_time=date_time).first()
     if not entry:
         if newbie:
             second_not = True
@@ -326,7 +324,7 @@ def make_entry(user_telegram_id, training_data, newbie=False):
         new_entry = mdl.Journal.objects.create(
             training=training,
             user=user,
-            date = training_data.get('date'),
+            date_time = date_time,
             second_not=second_not
         )
         new_entry.save()
@@ -335,20 +333,20 @@ def make_entry(user_telegram_id, training_data, newbie=False):
         entry.save()
 
 @sync_to_async()
-def get_users_for_not_yesterday(day):
+def get_users_for_not_rate(training):
+    day = training.get('day')
+    time = training.get('time')
+    date = training.get('date')
     #по дню определяем тренировку
-    training = mdl.Training.objects.filter(day=day, was_end=False).first()
-    # Получаем текущую дату и вычитаем из нее один день
-    yesterday = datetime.now() - timedelta(days=1)
-    # Форматируем дату по вашим предпочтениям
-    formatted_yesterday = yesterday.strftime("%Y-%m-%d")
+    training = mdl.Training.objects.filter(day=day, time=time, was_end=False).first()
+    date_time = datetime.combine(date, time)
     #ищем эту тренировку среди всех записей в журнале
-    journal_entries = mdl.Journal.objects.filter(training=training, date=formatted_yesterday).all()
+    journal_entries = mdl.Journal.objects.filter(training=training, date_time=date_time).all()
     if not journal_entries: return None
     #берём последнюю запись с этой тренировкой
-    last_journal_entry = journal_entries[-1]
+    last_journal_entry = journal_entries[len(journal_entries) - 1]
     #находим все записи с такой же датой и этой же тренировкой
-    journal_entries = journal_entries.filter(date=last_journal_entry.date).all()
+    journal_entries = journal_entries.filter(date_time=last_journal_entry.date_time).all()
     users_data = []
     journal_entries_ids = []
     if journal_entries:
@@ -357,15 +355,18 @@ def get_users_for_not_yesterday(day):
                 users_data.append({
                     'id': journal_entry.user.telegram_id,
                     'name': journal_entry.user.name,
+                    'training_time': journal_entry.training.time,
+                    'training_place': journal_entry.training.place,
+                    'training_address': journal_entry.training.address,
                 })
                 journal_entry.user.newbie = False
                 journal_entry.user.save()
                 journal_entry.save()
                 journal_entries_ids.append(journal_entry.id)
-        rate_entry = mdl.Rate.objects.filter(date=journal_entries[0].date).first()
+        rate_entry = mdl.Rate.objects.filter(date_time=journal_entries[0].date_time).first()
         if not rate_entry:
             new_rate = mdl.Rate.objects.create(
-                date = journal_entries[0].date,
+                date_time = journal_entries[0].date_time,
                 place = training.place,
                 address = training.address,
             )
@@ -392,9 +393,9 @@ def set_rate(rate, training_id):
     journal_entry = mdl.Journal.objects.filter(id=training_id).first()
     journal_entry.rate = rate
     journal_entry.save()
-    date = journal_entry.date
-    rate_entry = mdl.Rate.objects.filter(date=date).first()
-    journal_entries_yesterday = mdl.Journal.objects.filter(date=date).all()
+    date_time = journal_entry.date_time
+    rate_entry = mdl.Rate.objects.filter(date_time=date_time).first()
+    journal_entries_yesterday = mdl.Journal.objects.filter( date_time=date_time).all()
     rates = []
     for entry in journal_entries_yesterday:
         if entry.rate != 0 and entry.rate != None:
@@ -403,13 +404,16 @@ def set_rate(rate, training_id):
     rate_entry.rate = average_score
     rate_entry.save()
 
+
 @sync_to_async()
-def get_accept_users():
+def get_accept_users(training_id):
     now = datetime.now().date()
     then = now + timedelta(days = 1)
     today = now.strftime("%Y-%m-%d")
-
-    journal_entries = mdl.Journal.objects.filter(date=today).order_by('answer_time').all()
+    training = mdl.Training.objects.filter(id=training_id).first()
+    time = training.time
+    date_time = datetime.combine(now, time)
+    journal_entries = mdl.Journal.objects.filter(date_time=date_time).order_by('answer_time').all()
     if not journal_entries:
         return None
     
@@ -436,14 +440,37 @@ def get_accept_users():
     return users_data
 
 @sync_to_async()
-def get_training_rates(training_date=None):
+def get_rated_trainings(training_date=None):
     if not training_date:
         now = datetime.now().date()
         training_date = now - timedelta(days = 1)
-    journal_entries = mdl.Journal.objects.filter(date=training_date).exclude(rate=None).exclude(rate=0).all()
+    journal_entries = mdl.Journal.objects.filter(date_time__date=training_date).exclude(rate=None).exclude(rate=0).all()
     if not journal_entries:
         return None
-    rate = mdl.Rate.objects.filter(date=training_date).first()
+    trainings_ids = []
+    trainings_data = []
+    for entry in journal_entries:
+        if entry.training.id not in trainings_ids:
+            trainings_ids.append(entry.training.id)
+            trainings_data.append({
+                'id': entry.training.id,
+                'time': entry.training.time,
+                'place': entry.training.place,
+                'address': entry.training.address,
+                'date': training_date
+            })
+
+    return trainings_data
+
+@sync_to_async()
+def get_training_rates(training_data):
+    training_date = training_data.get('date')
+    training_time = training_data.get('time')
+    date_time = datetime.combine(training_date, training_time)
+    journal_entries = mdl.Journal.objects.filter(date_time=date_time).exclude(rate=None).exclude(rate=0).all()
+    if not journal_entries:
+        return None
+    rate = mdl.Rate.objects.filter(date_time=date_time).first()
     users = []
     for entry in journal_entries:
         users.append({

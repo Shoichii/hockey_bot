@@ -32,15 +32,15 @@ class TrainingAdmin(admin.ModelAdmin):
 @admin.register(md.Journal)
 class JournalAdmin(admin.ModelAdmin):
     exclude = ('second_not', 'previuos_answer')
-    list_display = ('training', 'user', 'accept', 'answer_time', 'rate',)
-    list_filter = ('training', 'user', 'accept', 'answer_time', 'rate',)
+    list_display = ('training', 'user', 'accept', 'answer_time', 'rate', 'date_time')
+    list_filter = ('training', 'user', 'accept', 'answer_time', 'rate', 'date_time')
 
 
 @admin.register(md.Rate)
 class RateAdmin(admin.ModelAdmin):
-    list_display = ('date', 'place', 'address', 'rate',)
-    list_filter = ('date', 'place', 'address', 'rate',)
-    readonly_fields = ('date', 'place', 'address', 'rate',)
+    list_display = ('date_time', 'place', 'address', 'rate',)
+    list_filter = ('date_time', 'place', 'address', 'rate',)
+    readonly_fields = ('date_time', 'place', 'address', 'rate',)
 
 @admin.register(md.Team)
 class TeamAdmin(admin.ModelAdmin):

@@ -90,14 +90,48 @@ async def get_training_info(msg: types.Message):
     if msg.from_user.id == ADM_ID:
         await msg.answer('Эта команда для игроков')
         return
-    training_data = await dj.get_training_info()
-    if not training_data:
-        await msg.answer('Запись на тренировку завершена')
+    trainings_data = await dj.get_training_info()
+    if not trainings_data:
+        await msg.answer('Тренировок для записи нет.')
         return
-    if training_data == 'not today':
+    if trainings_data == 'not today':
         await msg.answer('На сегодня тренировок нет')
         return
-    await user_notification({'id': msg.from_user.id, 'first_not': True} ,training_data, 'today')
+    if len(trainings_data) == 1:
+        await user_notification({'id': msg.from_user.id, 'first_not': True} ,trainings_data[0], 'today')
+    else:
+        message = 'Выберите тренировку\n\n'
+        count = 1
+        keyboard = types.InlineKeyboardMarkup()
+        for training in trainings_data:
+            id = training.get('id')
+            time = training.get('time').strftime('%H:%M')
+            address = training.get('address')
+            place = training.get('place')
+            if training.get('day') == 'friday':
+                training_type = '( *игровая тренировка* )'
+            else:
+                training_type = '( *тренировка* )'
+            button = types.InlineKeyboardButton(f'{count}) {time}', callback_data=f'select_training_{id}')
+            keyboard.add(button)
+            message += f'''{count})
+🕖Лёд в {time}{training_type} 
+🏟Стадион: {place} 
+{address}
+
+'''
+            count += 1
+        await msg.answer(message, reply_markup=keyboard)
+
+@dp.callback_query_handler(lambda call: call.data.startswith('select_training_'))
+async def show_selected_training(call: types.CallbackQuery):
+    await call.message.delete()
+    training_id = call.data.split('_')[2]
+    trainings_data = await dj.get_training_info(id=training_id)
+    if not trainings_data or trainings_data == 'not today':
+        await call.message.answer('Кажется, запись на тренировку завершена.')
+        return
+    await user_notification({'id': call.from_user.id, 'first_not': True} , trainings_data[0], 'today')
 
 async def get_user_profile(msg):
     user_data = await dj.check_new_user(msg.from_user.id)
@@ -227,8 +261,8 @@ def split_message(message, max_length=4096):
     """Разбивает сообщение на части, не превышающие max_length символов."""
     return [message[i:i+max_length] for i in range(0, len(message), max_length)]
 
-async def show_users_training(msg):
-    users_data = await dj.get_accept_users()
+async def show_users_training(msg, training_id):
+    users_data = await dj.get_accept_users(training_id)
     if not users_data:
         await msg.answer('Ещё никто не записался')
         return
@@ -320,14 +354,45 @@ async def dialog_handler(msg: types.Message):
     if msg.from_user.id == ADM_ID or msg.from_user.id == DEV_ID:
         if msg.text == 'Оценки тренировок 📊':
             message = '''
-Какую тренировку хотите посмотреть?
+За какой день хотите посмотреть тренировку?
 '''
             select_date_button = types.InlineKeyboardButton('Указать дату', callback_data='select_date_button')
-            yesterday_training_button = types.InlineKeyboardButton('Вчерашняя', callback_data='yesterday_training_button')
+            yesterday_training_button = types.InlineKeyboardButton('За вчерашний', callback_data='yesterday_training_button')
             keyboard = types.InlineKeyboardMarkup().row(select_date_button, yesterday_training_button)
             await msg.answer(message, reply_markup=keyboard)
         elif msg.text == 'Запись на тренировку 🏒':
-            await show_users_training(msg)
+            trainings_data = await dj.get_training_info()
+            if not trainings_data:
+                await msg.answer('Тренеровок пока нет')
+                return
+            elif trainings_data == 'not today':
+                await msg.answer('На сегодня тренировок нет или ещё никто не записался.')
+                return
+            if len(trainings_data) == 1:
+                await show_users_training(msg, trainings_data[0].get('id'))
+                return
+            message = 'Выберите тренировку\n\n'
+            count = 1
+            keyboard = types.InlineKeyboardMarkup()
+            for training in trainings_data:
+                id = training.get('id')
+                time = training.get('time').strftime('%H:%M')
+                address = training.get('address')
+                place = training.get('place')
+                if training.get('day') == 'friday':
+                    training_type = '( *игровая тренировка* )'
+                else:
+                    training_type = '( *тренировка* )'
+                button = types.InlineKeyboardButton(f'{count}) {time}', callback_data=f'select_current_training_{id}')
+                keyboard.add(button)
+                message += f'''{count})
+🕖Лёд в {time}{training_type} 
+🏟Стадион: {place} 
+{address}
+
+'''
+                count += 1
+            await msg.answer(message, reply_markup=keyboard)
         elif msg.text == 'Запись на игру 🎮':
             games_data = await dj.check_games_admin()
             if not games_data:
@@ -353,6 +418,12 @@ async def dialog_handler(msg: types.Message):
             await Adm_State.megaphone.set()
         else:
             await send_dialogue_message(msg)
+
+@dp.callback_query_handler(lambda call: call.data.startswith('select_current_training_'))
+async def show_selected_training(call: types.CallbackQuery):
+    await call.message.delete()
+    training_id = call.data.split('_')[3]
+    await show_users_training(call.message, training_id)
 
 @dp.callback_query_handler(lambda call: call.data.startswith('admin_select_game'))
 async def select_game_admin(call: types.CallbackQuery):
@@ -409,23 +480,74 @@ async def dialog_handler_media(msg: types.Message, album: List[types.Message]):
     if msg.from_user.id == ADM_ID:
         await send_dialogue_message_with_media(msg,album)
 
+async def show_rates_for_training(rates_data, training_data, msg):
+    date = training_data.get('date')
+    time = training_data.get('time')
+    place = training_data.get('place')
+    address = training_data.get('address')
+    date_time = datetime.combine(date, time)
+    date_time = date_time.strftime('%d.%m.%Y %H:%M')
+    message = f'''Оценки за вчершанюю тренировку:
+{date_time} 
+{place}
+{address}
 
-#показать оценки за вчершанюю тренировку
-@dp.callback_query_handler(lambda call: call.data == 'yesterday_training_button')
-async def get_yesterday_rates(call: types.CallbackQuery):
-    await call.message.delete()
-    rates_data = await dj.get_training_rates()
-    if not rates_data:
-        await call.message.answer('Вчера тренировок не было.')
-        return
-    message = 'Оценки за вчершанюю тренировку:\n\n'
+
+'''
     for user in rates_data.get('users'):
         name = user.get('name')
         rate = user.get('rate')
         message += f'{name} - {rate}\n'
     average_score = rates_data.get('average_score')
     message += f'\n<b>Средняя оценка тренировки - {average_score}</b>'
-    await call.message.answer(message)
+    await msg.answer(message)
+
+#показать оценки за вчершании тренирровки
+@dp.callback_query_handler(lambda call: call.data == 'yesterday_training_button')
+async def get_yesterday_rates(call: types.CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    rated_trainings = await dj.get_rated_trainings()
+    if not rated_trainings:
+            await call.message.answer('Вчера тренировок не было.')
+            return
+    if len(rated_trainings) == 1:
+        rates_data = await dj.get_training_rates(rated_trainings[0])
+        await show_rates_for_training(rates_data, rated_trainings[0], call.message)
+    else:
+        message = 'Выберите тренировку\n\n'
+        count = 1
+        keyboard = types.InlineKeyboardMarkup()
+        for training in rated_trainings:
+            date = training.get('date')
+            time = training.get('time')
+            place = training.get('place')
+            address = training.get('address')
+            id = training.get('id')
+            date_time = datetime.combine(date, time)
+            date_time = date_time.strftime('%d.%m.%Y %H:%M')
+            message += f'''{count})
+{date_time} 
+{place}
+{address}\n\n'''
+            button = types.InlineKeyboardButton(f'{count}) {place}', callback_data=f'select_rated_training_{id}')
+            keyboard.add(button)
+            count += 1
+        await call.message.answer(message, reply_markup=keyboard)
+        await state.update_data(trainings=rated_trainings)
+
+
+@dp.callback_query_handler(lambda call: call.data.startswith('select_rated_training_'))
+async def show_selected_training(call: types.CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    training_id = call.data.split('_')[3]
+    state_data = await state.get_data()
+    trainings = state_data.get('trainings')
+    for training in trainings:
+        if training.get('id') == int(training_id):
+            rates_data = await dj.get_training_rates(training)
+            await show_rates_for_training(rates_data, training, call.message)
+            await state.finish()
+            break
 
 #показать оценки за тренировку по выбранной дате
 @dp.callback_query_handler(lambda call: call.data == 'select_date_button')
@@ -453,22 +575,38 @@ async def get_rates_by_date(msg: types.Message, state: FSMContext):
         keyboard = types.InlineKeyboardMarkup().add(cancel_training_date_button)
         await msg.answer('Неверный формат даты. Повторите ввод.', reply_markup=keyboard)
         return
-    date_object = datetime.strptime(msg.text, "%d.%m.%Y")
-    training_date = date_object.strftime("%Y-%m-%d")
-    rates_data = await dj.get_training_rates(training_date)
-    if not rates_data:
+    training_date = datetime.strptime(msg.text, "%d.%m.%Y")
+    rated_trainings = await dj.get_rated_trainings(training_date)
+    if not rated_trainings:
         await msg.answer('В этот день тренировок не было.')
         await state.finish()
         return
-    message = f'Оценки за тренировку от {msg.text}:\n\n'
-    for user in rates_data.get('users'):
-        name = user.get('name')
-        rate = user.get('rate')
-        message += f'{name} - {rate}\n'
-    average_score = rates_data.get('average_score')
-    message += f'\n<b>Средняя оценка тренировки - {average_score}</b>'
-    await msg.answer(message)
-    await state.finish()
+    if len(rated_trainings) == 1:
+        rates_data = await dj.get_training_rates(rated_trainings[0])
+        await show_rates_for_training(rates_data, rated_trainings[0], msg)
+    else:
+        message = 'Выберите тренировку\n\n'
+        count = 1
+        keyboard = types.InlineKeyboardMarkup()
+        for training in rated_trainings:
+            date = training.get('date')
+            time = training.get('time')
+            place = training.get('place')
+            address = training.get('address')
+            id = training.get('id')
+            date_time = datetime.combine(date, time)
+            date_time = date_time.strftime('%d.%m.%Y %H:%M')
+            message += f'''{count})
+{date_time} 
+{place}
+{address}\n\n'''
+            button = types.InlineKeyboardButton(f'{count}) {place}', callback_data=f'select_rated_training_{id}')
+            keyboard.add(button)
+            count += 1
+        await msg.answer(message, reply_markup=keyboard)
+        await state.finish()
+        await state.update_data(trainings=rated_trainings)
+
 
 #вход для существующих пользователей
 @dp.callback_query_handler(lambda call: call.data == 'sign_in_button')
@@ -593,27 +731,22 @@ async def get_birthday(msg: types.Message, state: FSMContext):
     await state.finish()
 
 #запись на занятие
-@dp.callback_query_handler(lambda call: call.data == 'accept_button')
+@dp.callback_query_handler(lambda call: call.data.startswith('accept_button'))
 async def first_accept(call: types.CallbackQuery):
     today = datetime.today().date()
-    training_data_first = await dj.get_training_data_for_accept(today, call.from_user.id)
-
+    training_id = call.data.split('_')[2]
+    training_data_first = await dj.get_training_data_for_accept(today, training_id, call.from_user.id)
+    # для тестов
+    # test_date_time = "2023-11-17 22:00:00"
+    # now = datetime.strptime(test_date_time, "%Y-%m-%d %H:%M:%S")
     now = datetime.now()
-    # раскоментировать и создать файл time.txt для имитации текущего времени
-    # в файл записать время в формате 09:00:00
-    # time_str = ''
-    # with open('Bot/time.txt', 'r') as file:
-    #     # Считываем первую строку файлаnow
-    #     time_str = file.readline().strip()
-    # current_time = datetime.strptime(time_str, '%H:%M:%S').time()
-    current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
-    if today >= training_data_first.get('date') and current_time >= training_data_first.get('time'):
+    if now >= training_data_first:
         await call.message.delete()
         await call.message.answer('Запись на занятие окончена. Обратитесь к тренеру.')
         return
     await call.message.delete()
-    training_data_second = await dj.accept_training(today, call.from_user.id)
-    training_time = training_data_first.get('time').strftime("%H:%M")
+    training_data_second = await dj.accept_training(today, training_id, call.from_user.id)
+    training_date_time = training_data_second.get('date_time')
     training_place = training_data_second.get('place')
     training_address = training_data_second.get('address')
     
@@ -621,24 +754,27 @@ async def first_accept(call: types.CallbackQuery):
     message = f'''
 <b>Запись прошла успешно! ✅</b>
 
-Ждём Вас сегодня в {training_time}.
+Ждём Вас {training_date_time}.
 Адрес: {training_place}, {training_address}
 
 <a href="{url}">Построить маршрут</a>'''
     await call.message.answer(message, disable_web_page_preview=True)
 
-@dp.callback_query_handler(lambda call: call.data == 'declain_button')
+@dp.callback_query_handler(lambda call: call.data.startswith('declain_button'))
 async def declain(call: types.CallbackQuery):
-    date_str = call.message.text.split('\n\n')[1].split('\n')[0].split(' ')
-    if len(date_str) == 2:
-        date_str = date_str[1]
-    if len(date_str) == 3:
-        date_str = date_str[2]
-    date_obj = datetime.strptime(date_str, "%d.%m.%Y")
-    date = date_obj.strftime("%Y-%m-%d")
     today = datetime.today().date()
-    await dj.declain_training(date, call.from_user.id)
+    training_id = call.data.split('_')[2]
+    training_data_first = await dj.get_training_data_for_accept(today, training_id, call.from_user.id)
+
+    now = datetime.now()
+    if now >= training_data_first:
+        await call.message.delete()
+        await call.message.answer('Запись на занятие окончена. Ждём Вас снова!')
+        return
     await call.message.delete()
+
+
+    await dj.declain_training(today, training_id, call.from_user.id)
     await call.message.answer('❌ Тренировка отклонена. Ждём Вас в следующий раз!')
 
 

@@ -16,6 +16,7 @@ class Adm_State(StatesGroup):
     megaphone = State()
     text = State()
     photo = State()
+    trainings = State()
 
 class Dialogue_State(StatesGroup):
     start = State()
