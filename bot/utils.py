@@ -47,7 +47,7 @@ async def user_notification(user_data, training_data, when):
         await bot.send_message(disable_web_page_preview=True, chat_id=user_data.get('id'), text=message, reply_markup=keyboard)
         await dj.make_entry(user_data.get('id'), training_data, user_data.get('newbie'))
     except Exception as e:
-        # print(e)
+        #print(e)
         pass
 
 async def rate_notification(user, training_id):
@@ -72,7 +72,8 @@ async def rate_notification(user, training_id):
         await bot.send_message(chat_id=user.get('id'), text=message, reply_markup=keyboard)
         await dj.add_0_to_entry(training_id)
     except Exception as e:
-        print(e)
+        # print(e)
+        pass
 
 async def game_notification(user, game, was_call=False):
     date = game.date_time.strftime("%d.%m.%Y") 
@@ -121,14 +122,13 @@ async def training_checker():
     # tomorrow_day = tomorrow_day.strftime("%A").lower()
     today_trainings = await dj.get_trainings(today_day)
     training_for_rate = await dj.get_trainings_for_rate(today_day, yesterday_day)
-    if not training_for_rate:
-        return
-    for training in training_for_rate:
-        not_data = await dj.get_users_for_not_rate(training)
-        if not_data:
-            for i,user in enumerate(not_data.get('users_data')):
-                training_id = not_data.get('training_ids')[i]
-                await rate_notification(user, training_id)
+    if training_for_rate:
+        for training in training_for_rate:
+            not_data = await dj.get_users_for_not_rate(training)
+            if not_data:
+                for i,user in enumerate(not_data.get('users_data')):
+                    training_id = not_data.get('training_ids')[i]
+                    await rate_notification(user, training_id)
     if today_trainings:
         # # для тестов
         # test_time = "09:00:00"
@@ -141,7 +141,7 @@ async def training_checker():
             training_hours = int(training_time.hour)
             difference_hours = training_hours - current_hours
             if current_hours >= 9 and difference_hours > 4:
-                not_data = await dj.get_users_for_first_not(training.get('day'), training_time)
+                not_data = await dj.get_users_for_first_not(training)
                 if not not_data:
                     return
                 users_data = not_data.get('users_data')

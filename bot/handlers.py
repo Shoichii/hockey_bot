@@ -50,12 +50,15 @@ async def show_shedule(msg: types.Message):
 
 
 '''
-    for data in trainings_data:
+    day_order = {'Понедельник': 1, 'Вторник': 2, 'Среда': 3, 'Четверг': 4, 
+                'Пятница': 5, 'Суббота': 6, 'Воскресенье': 7}
+    sorted_trainings_data = sorted(trainings_data, key=lambda x: day_order.get(x['day'], float('inf')))
+    for data in sorted_trainings_data:
         day = data.get('day')
         time = data.get('time')
         place = data.get('place')
         address = data.get('address')
-        message += f'<b>{day} {time} - {place} | {address}</b>\n'
+        message += f'<b>{day} {time} - {place} | {address}</b>\n\n'
     
     await msg.answer(message)
 
@@ -262,11 +265,19 @@ def split_message(message, max_length=4096):
     return [message[i:i+max_length] for i in range(0, len(message), max_length)]
 
 async def show_users_training(msg, training_id):
-    users_data = await dj.get_accept_users(training_id)
-    if not users_data:
+    data = await dj.get_accept_users(training_id)
+    if not data:
         await msg.answer('Ещё никто не записался')
         return
-    message1 = '''Уже записались:
+    training_data = data.get('training_data')
+    place = training_data.get('place')
+    address = training_data.get('address')
+    time = training_data.get('time').strftime('%H:%M')
+    message1 = f'''{place}
+{address}
+{time}
+
+Уже записались:
     
 '''
     message2 = '''
@@ -276,7 +287,7 @@ async def show_users_training(msg, training_id):
 '''
     counter1 = 0
     counter2 = 0
-    for user in users_data:
+    for user in data.get('users_data'):
         name = user.get('name')
         birthday = user.get('birthday')
         newbie = user.get('newbie')

@@ -37,7 +37,7 @@ class Training(models.Model):
             if self.day in day:
                 week_day = day[1]
                 break
-        return week_day
+        return f'{week_day} {self.place}'
     
 
 class Journal(models.Model):

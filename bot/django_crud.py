@@ -66,6 +66,7 @@ def get_trainings(day):
     if todays:
         for today in todays:
             today_trainings.append({
+                'place': today.place,
                 'day': today.day,
                 'time': today.time
             })
@@ -122,7 +123,7 @@ def get_training_data_for_accept(date, training_id, user_id):
     training = mdl.Training.objects.filter(id=training_id).first()
     training_time = training.time
     date_time = datetime.combine(date, training_time)
-    journal_entry = mdl.Journal.objects.filter(user=user, date_time=date_time).first()
+    journal_entry = mdl.Journal.objects.filter(training=training, user=user, date_time=date_time).first()
     
     return journal_entry.date_time
 
@@ -133,7 +134,7 @@ def accept_training(date, training_id, user_id):
     training = mdl.Training.objects.filter(id=training_id).first()
     training_time = training.time
     date_time = datetime.combine(date, training_time)
-    journal_entry = mdl.Journal.objects.filter(user=user, date_time=date_time).first()
+    journal_entry = mdl.Journal.objects.filter(training=training, user=user, date_time=date_time).first()
     
     journal_entry.previuos_answer = journal_entry.accept
     journal_entry.accept = True
@@ -156,7 +157,7 @@ def declain_training(date, training_id, user_id):
     training = mdl.Training.objects.filter(id=training_id).first()
     training_time = training.time
     date_time = datetime.combine(date, training_time)
-    journal_entry = mdl.Journal.objects.filter(user=user, date_time=date_time).first()
+    journal_entry = mdl.Journal.objects.filter(training=training, user=user, date_time=date_time).first()
     journal_entry.previuos_answer = journal_entry.accept
     journal_entry.accept = False
     journal_entry.second_not = True
@@ -164,10 +165,13 @@ def declain_training(date, training_id, user_id):
     journal_entry.save()
 
 @sync_to_async()
-def get_users_for_first_not(day, training_time):
+def get_users_for_first_not(training):
     now = datetime.now()
     current_time = datetime.strptime(now.strftime("%H:%M:%S"), '%H:%M:%S').time()
-    training = mdl.Training.objects.filter(day=day, time=training_time, was_end=False).first()
+    day = training.get('day')
+    training_time = training.get('time')
+    place = training.get('place')
+    training = mdl.Training.objects.filter(place=place, day=day, time=training_time, was_end=False).first()
     if current_time >= training.time:
         return None
     
@@ -177,12 +181,13 @@ def get_users_for_first_not(day, training_time):
     date_time = datetime.combine(today, time)
     users_data = []
     for user in users:
-        user_trainings = mdl.Journal.objects.filter(user=user).exclude(date_time__date=today).all()
+        user_trainings = mdl.Journal.objects.filter(user=user).all()
         truant = False
         #если клиент первый раз воспользовался ботом, то у него него не будет записей тренировок
         #в журнале, поэтому проверяем. если тренировки есть
         if user_trainings:
             # смотрим сколько пропущенных подряд было до этого из последних 6ти
+            user_trainings = user_trainings.exclude(date_time__date=today)
             last_trainings = len(user_trainings)-6
             if last_trainings >= 0:
                 missed_trainings = user_trainings[last_trainings:]
@@ -197,7 +202,7 @@ def get_users_for_first_not(day, training_time):
                     truant = True
             #далее смотрим есть ли у него запись на сегодняшнюю тренировку
             #если он останавливал бота и снова его запустил, то записи может и не быть
-            journal_entry = mdl.Journal.objects.filter(user=user, date_time=date_time).first()
+            journal_entry = mdl.Journal.objects.filter(training=training, user=user, date_time=date_time).first()
             if not journal_entry:
                 #и добавляем пользователя в список для оповещения
                 users_data.append({
@@ -239,12 +244,12 @@ def get_users_for_second_not(day, time):
     training = mdl.Training.objects.filter(day=day, time=time, was_end=False).first()
     time = training.time
     date_time = datetime.combine(today, time)
-    entries = mdl.Journal.objects.filter(date_time=date_time, accept=None, second_not=False).all()
+    entries = mdl.Journal.objects.filter(training=training, date_time=date_time, accept=None, second_not=False).all()
     
     users_data = []
     users = mdl.User.objects.filter(telegram_id__isnull=False).all()
     for user in users:
-        entry = mdl.Journal.objects.filter(date_time=date_time, user=user).first()
+        entry = mdl.Journal.objects.filter(training=training, date_time=date_time, user=user).first()
         if not entry:
             users_data.append({
                 'id': user.telegram_id,
@@ -313,9 +318,10 @@ def make_entry(user_telegram_id, training_data, newbie=False):
     training_day = training_data.get('day')
     training_date = training_data.get('date')
     training_time = training_data.get('time')
-    training = mdl.Training.objects.filter(day=training_day, time=training_time).first()
+    training_place = training_data.get('place')
+    training = mdl.Training.objects.filter(place=training_place, day=training_day, time=training_time).first()
     date_time = datetime.combine(training_date, training_time)
-    entry = mdl.Journal.objects.filter(user=user, date_time=date_time).first()
+    entry = mdl.Journal.objects.filter(training=training, user=user, date_time=date_time).first()
     if not entry:
         if newbie:
             second_not = True
@@ -394,8 +400,11 @@ def set_rate(rate, training_id):
     journal_entry.rate = rate
     journal_entry.save()
     date_time = journal_entry.date_time
-    rate_entry = mdl.Rate.objects.filter(date_time=date_time).first()
-    journal_entries_yesterday = mdl.Journal.objects.filter( date_time=date_time).all()
+    place = journal_entry.training.place
+    address = journal_entry.training.address
+    rate_entry = mdl.Rate.objects.filter(place=place, address=address, date_time=date_time).first()
+    journal_entries_yesterday = mdl.Journal.objects.filter(training=journal_entry.training, 
+                                                        date_time=date_time).all()
     rates = []
     for entry in journal_entries_yesterday:
         if entry.rate != 0 and entry.rate != None:
@@ -413,7 +422,7 @@ def get_accept_users(training_id):
     training = mdl.Training.objects.filter(id=training_id).first()
     time = training.time
     date_time = datetime.combine(now, time)
-    journal_entries = mdl.Journal.objects.filter(date_time=date_time).order_by('answer_time').all()
+    journal_entries = mdl.Journal.objects.filter(training=training, date_time=date_time).order_by('answer_time').all()
     if not journal_entries:
         return None
     
@@ -437,7 +446,12 @@ def get_accept_users(training_id):
                 'newbie': newbie,
                 'changed': changed
             })
-    return users_data
+            training_data = {
+                'place': training.place,
+                'address': training.address,
+                'time': training.time,
+            }
+    return {'users_data':users_data, 'training_data':training_data}
 
 @sync_to_async()
 def get_rated_trainings(training_date=None):
@@ -467,10 +481,12 @@ def get_training_rates(training_data):
     training_date = training_data.get('date')
     training_time = training_data.get('time')
     date_time = datetime.combine(training_date, training_time)
-    journal_entries = mdl.Journal.objects.filter(date_time=date_time).exclude(rate=None).exclude(rate=0).all()
+    training = mdl.Training.objects.filter(id=training_data.get('id')).first()
+    journal_entries = mdl.Journal.objects.filter(training=training, date_time=date_time).exclude(rate=None).exclude(rate=0).all()
     if not journal_entries:
         return None
-    rate = mdl.Rate.objects.filter(date_time=date_time).first()
+    rate = mdl.Rate.objects.filter(place=training.place, address=training.address,  
+                                date_time=date_time).first()
     users = []
     for entry in journal_entries:
         users.append({
